@@ -1,0 +1,51 @@
+# =========================
+# Build Output
+# =========================
+build/
+out/
+bin/
+lib/
+*.a
+*.lib
+*.exe
+*.dll
+*.so
+*.dylib
+
+# =========================
+# CMake
+# =========================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+*.cmake
+!cmake/*.cmake
+CMakeUserPresets.json
+
+# =========================
+# IDEs & Editors
+# =========================
+.vscode/
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.suo
+*.user
+*.swp
+
+# =========================
+# OS Specific
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================
+# Dependencies
+# =========================
+# We generally commit GLAD because it is small source code.
+# However, if you add large binaries to 'external' later, ignore them here.
