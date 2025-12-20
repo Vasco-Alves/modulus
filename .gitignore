@@ -36,6 +36,7 @@ CMakeUserPresets.json
 *.suo
 *.user
 *.swp
+.vs/
 
 # =========================
 # OS Specific
@@ -49,3 +50,4 @@ Desktop.ini
 # =========================
 # We generally commit GLAD because it is small source code.
 # However, if you add large binaries to 'external' later, ignore them here.
+/setup_modulus.sh
