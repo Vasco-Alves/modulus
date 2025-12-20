@@ -29,7 +29,7 @@ The framework is divided into independent modules:
 ### 1. Clone the Repository
 
 ```bash
-git clone [<https://github.com/your-username/modulus.git>](<https://github.com/your-username/modulus.git>)
+git clone https://github.com/Vasco-Alves/modulus.git
 cd modulus
 ```
 
@@ -69,13 +69,3 @@ cmake --build .
 ```bash
 ./bin/hello_window
 ```
-
-### Next Steps for You
-
-1. Create these two files in your root directory.
-2. Initialize git: `git init`
-3. Add files: `git add .`
-4. Commit: `git commit -m "Initial commit: Structure and Build System"`
-5. Push to GitHub.
-
-Once that is done, we are ready to write the **Core Module** C++ code!
