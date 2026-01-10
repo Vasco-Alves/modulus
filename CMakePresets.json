@@ -1,62 +1,62 @@
 {
-    "version": 4,
-    "cmakeMinimumRequired": {
-        "major": 3,
-        "minor": 23,
-        "patch": 0
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}"
     },
-    "configurePresets": [
-        {
-            "name": "base",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}"
-        },
-        {
-            "name": "windows-debug",
-            "displayName": "Windows x64 Debug",
-            "description": "Target Windows (MSVC) using Ninja",
-            "inherits": "base",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "MODULUS_BUILD_EXAMPLES": "ON",
-                "MODULUS_BUILD_TESTS": "ON"
-            }
-        },
-        {
-            "name": "linux-debug",
-            "displayName": "WSL (GCC) Debug",
-            "description": "Target Linux (WSL) using GCC",
-            "inherits": "base",
-            "vendor": {
-                "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                    "hostOS": [
-                        "Linux"
-                    ]
-                }
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "MODULUS_BUILD_EXAMPLES": "ON",
-                "MODULUS_BUILD_TESTS": "ON"
-            }
+    {
+      "name": "windows-debug",
+      "displayName": "Windows x64 Debug",
+      "description": "Target Windows (MSVC) using Ninja",
+      "inherits": "base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MODULUS_BUILD_EXAMPLES": "ON",
+        "MODULUS_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "WSL (GCC) Debug",
+      "description": "Target Linux (WSL) using GCC",
+      "inherits": "base",
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [
+            "Linux"
+          ]
         }
-    ],
-    "buildPresets": [
-        {
-            "name": "windows-debug",
-            "configurePreset": "windows-debug"
-        },
-        {
-            "name": "linux-debug",
-            "configurePreset": "linux-debug"
-        }
-    ]
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MODULUS_BUILD_EXAMPLES": "ON",
+        "MODULUS_BUILD_TESTS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug"
+    },
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug"
+    }
+  ]
 }
