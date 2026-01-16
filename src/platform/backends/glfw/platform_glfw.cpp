@@ -1,5 +1,6 @@
 #include <modulus/platform/platform.hpp>
 #include <modulus/core/log.hpp>
+#include "glfw_internal.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -14,6 +15,8 @@ namespace modulus::platform {
 	static void glfw_error_callback(int error, const char* description) {
 		MOD_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
+
+	GLFWwindow* g_mainWindowHandle = nullptr;
 
 	// =========================================================================
 	// Internal Class: The actual GLFW implementation
@@ -47,6 +50,10 @@ namespace modulus::platform {
 				return;
 			}
 
+			if (g_mainWindowHandle == nullptr) {
+				g_mainWindowHandle = m_handle;
+			}
+
 			// Associate this class instance with the raw GLFW window
 			// (Useful if we need to access 'this' inside static callbacks later)
 			glfwSetWindowUserPointer(m_handle, this);
@@ -62,6 +69,10 @@ namespace modulus::platform {
 		}
 
 		~GlfwWindow() override {
+			if (g_mainWindowHandle == m_handle) {
+				g_mainWindowHandle = nullptr;
+			}
+
 			if (m_handle) {
 				glfwDestroyWindow(m_handle);
 				m_handle = nullptr;
@@ -76,15 +87,14 @@ namespace modulus::platform {
 			glfwPollEvents();
 
 			// Swap buffers (Should logically be in Gfx, but often coupled to window in MVP)
-			glfwSwapBuffers(m_handle);
+			// glfwSwapBuffers(m_handle);
 
 			return !glfwWindowShouldClose(m_handle);
 		}
 
 		void close() override {
-			if (m_handle) {
+			if (m_handle)
 				glfwSetWindowShouldClose(m_handle, GLFW_TRUE);
-			}
 		}
 
 		int width() const override {

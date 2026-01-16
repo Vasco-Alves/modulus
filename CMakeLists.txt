@@ -47,7 +47,7 @@ option(MODULUS_BUILD_GFX      "Build the Graphics module (OpenGL/Vulkan)"    ON)
 
 # Build Targets
 option(MODULUS_BUILD_EXAMPLES "Build the example applications" ON)
-option(MODULUS_BUILD_TESTS    "Build unit tests"               ON)
+option(MODULUS_BUILD_TESTS    "Build unit tests"               OFF)
 
 message(STATUS "-------------------------------------------------")
 message(STATUS "Modulus Configuration:")

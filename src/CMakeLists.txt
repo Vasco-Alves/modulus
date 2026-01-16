@@ -19,6 +19,7 @@ if(MODULUS_BUILD_PLATFORM)
     add_library(modulus_platform STATIC
         platform/platform.cpp
         platform/backends/glfw/platform_glfw.cpp
+        platform/backends/glfw/input_glfw.cpp
     )
     add_library(modulus::platform ALIAS modulus_platform)
 
@@ -53,15 +54,16 @@ if(MODULUS_BUILD_GFX)
 
     target_link_libraries(modulus_gfx
         PUBLIC  modulus::platform # Needs window handles
+        PRIVATE glad
         PRIVATE OpenGL::GL
+        PRIVATE glfw
     )
 endif()
 
 # ==============================================================================
 # 4. The "Mega" Target (modulus::modulus)
 # ==============================================================================
-# This is an INTERFACE library. It doesn't compile code itself, 
-# it just groups the others together.
+# This is an INTERFACE library. It doesn't compile code itself, it just groups the others together.
 add_library(modulus_all INTERFACE)
 add_library(modulus::modulus ALIAS modulus_all)
 

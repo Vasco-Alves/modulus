@@ -34,7 +34,7 @@ endif()
 #           khrplatform.h
 #       src/
 #         glad.c
-#       CMakeLists.txt (We will create this below)
+#       CMakeLists.txt
 
 if(MODULUS_BUILD_GFX)
     # Check if the user has actually put the files there
