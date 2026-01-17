@@ -3,6 +3,7 @@
 # ==============================================================================
 add_library(modulus_core STATIC
     core/log.cpp
+    core/file.cpp
 )
 add_library(modulus::core ALIAS modulus_core)
 
@@ -17,7 +18,6 @@ target_include_directories(modulus_core
 # ==============================================================================
 if(MODULUS_BUILD_PLATFORM)
     add_library(modulus_platform STATIC
-        platform/platform.cpp
         platform/backends/glfw/platform_glfw.cpp
         platform/backends/glfw/input_glfw.cpp
     )
@@ -44,6 +44,9 @@ if(MODULUS_BUILD_GFX)
     add_library(modulus_gfx STATIC
         gfx/gfx.cpp
         gfx/backends/opengl/gfx_opengl.cpp
+        gfx/backends/opengl/shader.cpp
+        gfx/backends/opengl/buffer.cpp
+        gfx/backends/opengl/vertex_array.cpp
     )
     add_library(modulus::gfx ALIAS modulus_gfx)
 

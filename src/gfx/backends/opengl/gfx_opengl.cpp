@@ -43,6 +43,12 @@ namespace modulus::gfx {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
+	void draw_indexed(const std::shared_ptr<VertexArray>& vertexArray) {
+		vertexArray->bind();
+		unsigned int count = vertexArray->get_index_buffer()->get_count();
+		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+	}
+
 	void present(platform::IWindow& window) {
 		// We need the native GLFW handle to swap buffers
 		GLFWwindow* handle = static_cast<GLFWwindow*>(window.get_native_handle());

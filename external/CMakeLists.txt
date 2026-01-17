@@ -67,3 +67,27 @@ if(MODULUS_BUILD_AUDIO)
     target_include_directories(miniaudio INTERFACE "${miniaudio_SOURCE_DIR}")
     # Note: miniaudio implementation must be #defined in one .cpp file later.
 endif()
+
+# ==============================================================================
+# 4. GLM (Mathematics)
+# ==============================================================================
+if(MODULUS_BUILD_GFX)
+    message(STATUS "Modulus: Fetching GLM...")
+    FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG        0.9.9.8
+    )
+
+    # MANUAL POPULATION
+    # This downloads the files but DOES NOT run GLM's CMakeLists.txt
+    FetchContent_GetProperties(glm)
+    if(NOT glm_POPULATED)
+        FetchContent_Populate(glm)
+        
+        # We manually create the "glm" library target here.
+        # "INTERFACE" means "There is nothing to compile, just headers to include."
+        add_library(glm INTERFACE)
+        target_include_directories(glm INTERFACE ${glm_SOURCE_DIR})
+    endif()
+endif()

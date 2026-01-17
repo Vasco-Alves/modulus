@@ -86,9 +86,6 @@ namespace modulus::platform {
 			// Process OS events (keyboard, mouse, window resize)
 			glfwPollEvents();
 
-			// Swap buffers (Should logically be in Gfx, but often coupled to window in MVP)
-			// glfwSwapBuffers(m_handle);
-
 			return !glfwWindowShouldClose(m_handle);
 		}
 

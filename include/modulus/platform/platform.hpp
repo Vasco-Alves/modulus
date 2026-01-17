@@ -1,7 +1,8 @@
 #pragma once
 
 #include "window.hpp"
-#include <memory> // for std::unique_ptr
+
+#include <memory>
 
 namespace modulus::platform {
 
