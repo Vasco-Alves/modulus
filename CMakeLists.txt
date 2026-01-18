@@ -43,7 +43,7 @@ option(MODULUS_BUILD_CORE     "Build the Core module (Logging, Types)" ON)
 # Optional Modules
 option(MODULUS_BUILD_PLATFORM "Build the Platform module (Windowing, Input)" ON)
 option(MODULUS_BUILD_GFX      "Build the Graphics module (OpenGL/Vulkan)"    ON)
-# option(MODULUS_BUILD_AUDIO  "Build the Audio module"                       OFF) # Future
+option(MODULUS_BUILD_AUDIO    "Build the Audio module"                       ON)
 
 # Build Targets
 option(MODULUS_BUILD_EXAMPLES "Build the example applications" ON)
@@ -53,6 +53,7 @@ message(STATUS "-------------------------------------------------")
 message(STATUS "Modulus Configuration:")
 message(STATUS "  Platform Module: ${MODULUS_BUILD_PLATFORM}")
 message(STATUS "  Graphics Module: ${MODULUS_BUILD_GFX}")
+message(STATUS "  Audio Module:    ${MODULUS_BUILD_AUDIO}")
 message(STATUS "  Examples:        ${MODULUS_BUILD_EXAMPLES}")
 message(STATUS "  Tests:           ${MODULUS_BUILD_TESTS}")
 message(STATUS "-------------------------------------------------")

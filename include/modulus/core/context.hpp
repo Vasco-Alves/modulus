@@ -29,7 +29,9 @@ namespace modulus {
 		}
 
 		// Helper to check if everything started okay
-		bool is_valid() const { return m_initialized; }
+		bool is_valid() const {
+			return m_initialized;
+		}
 
 	private:
 		bool m_initialized = false;

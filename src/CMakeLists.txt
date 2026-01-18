@@ -64,7 +64,31 @@ if(MODULUS_BUILD_GFX)
 endif()
 
 # ==============================================================================
-# 4. The "Mega" Target (modulus::modulus)
+# 4. Modulus Audio (Depends on miniaudio)
+# ==============================================================================
+if(MODULUS_BUILD_AUDIO)
+    add_library(modulus_audio STATIC
+        audio/audio.cpp
+    )
+
+    add_library(modulus::audio ALIAS modulus_audio)
+
+    target_include_directories(modulus_audio
+        PUBLIC "${PROJECT_SOURCE_DIR}/include"
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(modulus_audio
+        PUBLIC modulus::core   # Needs logging
+        PRIVATE miniaudio      # The library we defined in external/CMakeLists.txt
+    )
+#     # Define MINIAUDIO_IMPLEMENTATION in this compilation unit
+#     target_compile_definitions(modulus_audio PRIVATE MINIAUDIO_IMPLEMENTATION)
+endif()
+
+
+# ==============================================================================
+# 5. The "Mega" Target (modulus::modulus)
 # ==============================================================================
 # This is an INTERFACE library. It doesn't compile code itself, it just groups the others together.
 add_library(modulus_all INTERFACE)
@@ -81,3 +105,8 @@ endif()
 if(MODULUS_BUILD_GFX)
     target_link_libraries(modulus_all INTERFACE modulus::gfx)
 endif()
+
+if(MODULUS_BUILD_GFX)
+    target_link_libraries(modulus_all INTERFACE modulus::audio)
+endif()
+    

@@ -48,24 +48,19 @@ if(MODULUS_BUILD_GFX)
 endif()
 
 # ==============================================================================
-# 3. miniaudio (For Audio Module)
+# 3. miniaudio (For Audio Module) - MANUAL DOWNLOAD
 # ==============================================================================
-# We fetch the single header file. 
-# Since it's not a library with a CMakeLists.txt, we define the target ourselves here.
-
 if(MODULUS_BUILD_AUDIO)
-    message(STATUS "Modulus: Fetching miniaudio...")
-    FetchContent_Declare(
-        miniaudio
-        URL https://raw.githubusercontent.com/mackron/miniaudio/0.11.11/miniaudio.h
-        DOWNLOAD_NO_EXTRACT TRUE
-    )
-    FetchContent_MakeAvailable(miniaudio)
-
-    # Define a clean target for the rest of Modulus to use
-    add_library(miniaudio INTERFACE)
-    target_include_directories(miniaudio INTERFACE "${miniaudio_SOURCE_DIR}")
-    # Note: miniaudio implementation must be #defined in one .cpp file later.
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/miniaudio/miniaudio.h")
+        message(STATUS "Modulus: Found miniaudio")
+        
+        # Create a "fake" library that just points to the include folder
+        add_library(miniaudio INTERFACE)
+        target_include_directories(miniaudio INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/miniaudio")
+        
+    else()
+        message(WARNING "Modulus: miniaudio.h not found in external/miniaudio/")
+    endif()
 endif()
 
 # ==============================================================================

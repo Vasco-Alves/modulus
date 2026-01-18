@@ -1,5 +1,3 @@
-# examples/CMakeLists.txt
-
 # Always build the console example (it only needs Core)
 add_subdirectory(hello_console)
 
