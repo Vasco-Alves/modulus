@@ -1,6 +1,6 @@
 # Modulus Framework
 
-**Modulus** is a unified, modular C++ framework designed to be the "standard way" to build multimedia applications, tools, and engines.
+**Modulus** is a unified, modular C++ framework designed to build multimedia applications, tools, and engines.
 
 It acts as a consistent facade over the fragmented C++ ecosystem, allowing developers to write code once (`modulus::platform::create_window`) and switch backends (GLFW, SDL, Windows) simply by changing a configuration line.
 
@@ -8,7 +8,6 @@ It acts as a consistent facade over the fragmented C++ ecosystem, allowing devel
 
 - **Stable Mental Model:** Learn one API, use it everywhere. No need to memorize the quirks of 5 different libraries.
 - **Pay for what you use:** Need only Audio? Link `modulus::audio`. Need a full engine? Link `modulus::modulus`.
-- **Modern C++:** Built with C++20, enforcing strict standards and modern practices.
 
 ## Architecture (MVP)
 
@@ -17,7 +16,7 @@ The framework is divided into independent modules:
 - **Core:** Logging, Types, Assertions. (Zero dependencies)
 - **Platform:** Window creation, Input, Events. (Backend: **GLFW**)
 - **Gfx:** Rendering context, frame control. (Backend: **OpenGL 4.6**)
-- *(Planned)* **Audio:** Spatial audio and mixing. (Backend: **miniaudio**)
+- **Audio:** Spatial audio and mixing. (Backend: **miniaudio**)
 
 ## Getting Started
 
