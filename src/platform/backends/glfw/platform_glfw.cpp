@@ -94,6 +94,11 @@ namespace modulus::platform {
 				glfwSetWindowShouldClose(m_handle, GLFW_TRUE);
 		}
 
+		void set_title(const std::string& title) override {
+			if (m_handle)
+				glfwSetWindowTitle(m_handle, title.c_str());
+		}
+
 		int width() const override {
 			int w, h;
 			glfwGetWindowSize(m_handle, &w, &h);

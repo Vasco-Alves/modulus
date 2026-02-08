@@ -22,7 +22,8 @@ namespace modulus::platform {
 		virtual bool update() = 0;       // Polls events. Returns false if window should close.
 		virtual void close() = 0;        // Manually signal close
 
-		// Getters
+
+		virtual void set_title(const std::string& title) = 0;
 		virtual int width() const = 0;
 		virtual int height() const = 0;
 		virtual std::pair<int, int> get_size() const = 0;
