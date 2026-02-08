@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 using ShaderID = unsigned int;
 
@@ -34,6 +35,9 @@ namespace modulus::gfx {
 		ShaderID m_renderer_id = 0;
 
 		ShaderID compile_shader(unsigned int type, const std::string& source);
+
+		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
+		int GetUniformLocation(const std::string& name) const;
 	};
 
 } // namespace modulus::gfx

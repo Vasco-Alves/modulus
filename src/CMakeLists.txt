@@ -8,7 +8,8 @@ add_library(modulus_core STATIC
 add_library(modulus::core ALIAS modulus_core)
 
 target_include_directories(modulus_core
-    PUBLIC "${PROJECT_SOURCE_DIR}/include"
+    #PUBLIC "${PROJECT_SOURCE_DIR}/include"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 # Core doesn't link to anything!

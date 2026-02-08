@@ -87,9 +87,16 @@ namespace modulus::gfx {
 	}
 
 	void Shader::set_mat4(const std::string& name, const float* value) {
-		int loc = glGetUniformLocation(m_renderer_id, name.c_str());
-		// 1 = count, GL_FALSE = transpose? (usually false for GLM)
-		if (loc != -1) glUniformMatrix4fv(loc, 1, GL_FALSE, value);
+		glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, value);
+	}
+
+	int Shader::GetUniformLocation(const std::string& name) const {
+		if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
+			return m_UniformLocationCache[name];
+
+		int location = glGetUniformLocation(m_renderer_id, name.c_str());
+		m_UniformLocationCache[name] = location;
+		return location;
 	}
 
 } // namespace modulus::gfx
