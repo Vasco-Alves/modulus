@@ -16,7 +16,13 @@ namespace modulus::platform {
 		MOD_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
+	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+		g_scrollDeltaY += (float)yoffset;
+	}
+
 	GLFWwindow* g_mainWindowHandle = nullptr;
+
+	float g_scrollDeltaY = 0.0f;
 
 	// =========================================================================
 	// Internal Class: The actual GLFW implementation
@@ -66,6 +72,8 @@ namespace modulus::platform {
 			glfwSwapInterval(config.vsync ? 1 : 0);
 
 			MOD_INFO("Window created: {0}x{1} ({2})", config.width, config.height, config.title);
+
+			glfwSetScrollCallback(m_handle, scroll_callback);
 		}
 
 		~GlfwWindow() override {
@@ -83,8 +91,8 @@ namespace modulus::platform {
 			if (!m_handle)
 				return false;
 
-			// Process OS events (keyboard, mouse, window resize)
-			glfwPollEvents();
+			g_scrollDeltaY = 0.0f;	// Reset scroll
+			glfwPollEvents();		// Process OS events (keyboard, mouse, window resize)
 
 			return !glfwWindowShouldClose(m_handle);
 		}

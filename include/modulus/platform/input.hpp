@@ -1,26 +1,26 @@
 #pragma once
 
+#include <utility>
+
 namespace modulus::platform {
 
 	enum class Key {
 		Unknown = 0,
 
-		// Letters
-		A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-
 		// Controls
-		Space,
-		Escape,
-		Enter,
+		Escape, Enter, Space, Tab, Backspace,
 
 		// Arrows
-		Right, Left, Down, Up
+		Left, Right, Up, Down,
+
+		// Letters
+		F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+		D0, D1, D2, D3, D4, D5, D6, D7, D8, D9,
+		A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
 	};
 
 	enum class MouseButton {
-		Left,
-		Right,
-		Middle
+		Left, Right, Middle
 	};
 
 	// The Interface for checking input state
@@ -29,8 +29,8 @@ namespace modulus::platform {
 		static bool is_key_down(Key key);
 		static bool is_mouse_down(MouseButton button);
 
-		// Later we can add:
-		// static std::pair<float, float> get_mouse_pos();
+		static std::pair<float, float> get_mouse_position();
+		static float get_mouse_scroll(); // Returns scroll delta since last frame
 	};
 
 } // namespace modulus::platform

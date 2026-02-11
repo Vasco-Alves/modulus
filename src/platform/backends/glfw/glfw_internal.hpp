@@ -6,4 +6,7 @@ namespace modulus::platform {
 	// A global pointer to the main window handle.
 	// Defined in platform_glfw.cpp, used in input_glfw.cpp
 	extern GLFWwindow* g_mainWindowHandle;
+	
+	// Global scroll accumulator
+	extern float g_scrollDeltaY;
 }
