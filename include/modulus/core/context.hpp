@@ -13,8 +13,7 @@ namespace modulus {
 
 			// Initialize Platform
 			if (!platform::init()) {
-				// In a real engine, we might throw an exception here
-				// or have a status flag
+				// In a real engine, we might throw an exception here or have a status flag
 				m_initialized = false;
 			} else {
 				m_initialized = true;
