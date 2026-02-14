@@ -87,10 +87,10 @@ namespace modulus::gfx {
 	}
 
 	void Shader::set_mat4(const std::string& name, const float* value) {
-		glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, value);
+		glUniformMatrix4fv(get_cached_uniform_location(name), 1, GL_FALSE, value);
 	}
 
-	int Shader::GetUniformLocation(const std::string& name) const {
+	int Shader::get_cached_uniform_location(const std::string& name) const {
 		if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
 			return m_UniformLocationCache[name];
 

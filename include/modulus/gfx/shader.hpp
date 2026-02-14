@@ -33,11 +33,11 @@ namespace modulus::gfx {
 
 	private:
 		ShaderID m_renderer_id = 0;
+		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
 
 		ShaderID compile_shader(unsigned int type, const std::string& source);
 
-		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
-		int GetUniformLocation(const std::string& name) const;
+		int get_cached_uniform_location(const std::string& name) const;
 	};
 
 } // namespace modulus::gfx
