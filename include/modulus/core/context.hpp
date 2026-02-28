@@ -1,7 +1,7 @@
 #pragma once
 
-#include <modulus/core/log.hpp>
-#include <modulus/platform/platform.hpp>
+#include "modulus/core/log.hpp"
+#include "modulus/platform/platform.hpp"
 
 namespace modulus {
 

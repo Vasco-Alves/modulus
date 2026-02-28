@@ -1,9 +1,8 @@
-#include <modulus/gfx/graphics.hpp>
-#include <modulus/core/log.hpp>
+#include "modulus/gfx/graphics.hpp"
+#include "modulus/core/log.hpp"
 
-// Include GLAD first! (It includes standard GL headers)
 #include <glad/glad.h>
-#include <GLFW/glfw3.h> // Needed for glfwGetProcAddress and glfwSwapBuffers
+#include <GLFW/glfw3.h>
 
 namespace modulus::gfx {
 
@@ -22,7 +21,7 @@ namespace modulus::gfx {
 		MOD_INFO("  Vendor: {0}", (const char*)glGetString(GL_VENDOR));
 		MOD_INFO("  Renderer: {0}", (const char*)glGetString(GL_RENDERER));
 
-		// Enable default states (optional)
+		// Enable default states
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -52,9 +51,7 @@ namespace modulus::gfx {
 	void present(platform::IWindow& window) {
 		// We need the native GLFW handle to swap buffers
 		GLFWwindow* handle = static_cast<GLFWwindow*>(window.get_native_handle());
-		if (handle) {
-			glfwSwapBuffers(handle);
-		}
+		if (handle) glfwSwapBuffers(handle);
 	}
 
 } // namespace modulus::gfx

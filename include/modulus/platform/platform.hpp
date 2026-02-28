@@ -12,8 +12,7 @@ namespace modulus::platform {
 	// Shuts down the subsystem (e.g. glfwTerminate)
 	void shutdown();
 
-	// Factory function: Creates a specific backend window (GLFW) 
-	// but returns the generic interface.
+	// Factory function: Creates a specific backend window but returns the generic interface.
 	std::unique_ptr<IWindow> create_window(const WindowConfig& config);
 
 } // namespace modulus::platform

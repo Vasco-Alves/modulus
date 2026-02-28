@@ -17,6 +17,7 @@ namespace modulus::gfx {
 
 		// The VAO takes ownership of the buffers (via shared_ptr) because the VAO needs them to stay alive to draw.
 		void add_vertex_buffer(const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout);
+
 		void set_index_buffer(const std::shared_ptr<IndexBuffer>& indexBuffer);
 
 		const std::shared_ptr<IndexBuffer>& get_index_buffer() const {

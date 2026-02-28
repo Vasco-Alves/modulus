@@ -1,14 +1,14 @@
-#include <modulus/gfx/shader.hpp>
-#include <modulus/core/log.hpp>
+#include "modulus/gfx/shader.hpp"
+#include "modulus/core/log.hpp"
+
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <vector>
 
 namespace modulus::gfx {
 
 	// Helper: Checks if compilation/linking failed and logs the error
-	// 'id' is the shader or program ID.
-	// 'isProgram' is true if checking linking, false if checking compilation.
 	static void check_compile_errors(unsigned int id, bool isProgram) {
 		int success;
 		char infoLog[1024];
@@ -28,23 +28,32 @@ namespace modulus::gfx {
 		}
 	}
 
+	// Helper: Compilation logic
+	static unsigned int compile_shader(unsigned int type, const std::string& source) {
+		unsigned int id = glCreateShader(type);
+		const char* src = source.c_str();
+
+		glShaderSource(id, 1, &src, nullptr);
+		glCompileShader(id);
+
+		check_compile_errors(id, false);
+		return id;
+	}
+
 	Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc) {
-		// 1. Create the Program Container
 		m_renderer_id = glCreateProgram();
 
-		// 2. Compile the individual shaders
 		unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertexSrc);
 		unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragmentSrc);
 
-		// 3. Attach and Link
 		glAttachShader(m_renderer_id, vs);
 		glAttachShader(m_renderer_id, fs);
 		glLinkProgram(m_renderer_id);
 
-		// 4. Check for Linking Errors
 		check_compile_errors(m_renderer_id, true);
 
-		// 5. Cleanup
+		// Ideally detach before deleting, but strictly deleting works too
+		// as they are flagged for deletion when detached/program destroyed.
 		glDeleteShader(vs);
 		glDeleteShader(fs);
 	}
@@ -61,41 +70,44 @@ namespace modulus::gfx {
 		glUseProgram(0);
 	}
 
-	unsigned int Shader::compile_shader(unsigned int type, const std::string& source) {
-		unsigned int id = glCreateShader(type);
-		const char* src = source.c_str();
-
-		// Load source and compile
-		glShaderSource(id, 1, &src, nullptr);
-		glCompileShader(id);
-
-		// Check for errors
-		check_compile_errors(id, false);
-
-		return id;
-	}
+	// --- Uniforms (Now consistently using the cache) ---
 
 	void Shader::set_int(const std::string& name, int value) {
-		// Note: In a real engine, we would cache this location to avoid string lookup!
-		int loc = glGetUniformLocation(m_renderer_id, name.c_str());
+		int loc = get_cached_uniform_location(name);
 		if (loc != -1) glUniform1i(loc, value);
 	}
 
 	void Shader::set_float3(const std::string& name, float x, float y, float z) {
-		int loc = glGetUniformLocation(m_renderer_id, name.c_str());
+		int loc = get_cached_uniform_location(name);
 		if (loc != -1) glUniform3f(loc, x, y, z);
 	}
 
-	void Shader::set_mat4(const std::string& name, const float* value) {
-		glUniformMatrix4fv(get_cached_uniform_location(name), 1, GL_FALSE, value);
+	void Shader::set_float4(const std::string& name, float x, float y, float z, float w) {
+		int loc = get_cached_uniform_location(name);
+		if (loc != -1) glUniform4f(loc, x, y, z, w);
+	}
+
+	void Shader::set_mat4(const std::string& name, const glm::mat4& value) {
+		int loc = get_cached_uniform_location(name);
+		if (loc != -1) glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 	}
 
 	int Shader::get_cached_uniform_location(const std::string& name) const {
-		if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
-			return m_UniformLocationCache[name];
+		// 1. Check Cache
+		auto it = m_UniformLocationCache.find(name);
+		if (it != m_UniformLocationCache.end())
+			return it->second;
 
+		// 2. Not found? Look it up in OpenGL
 		int location = glGetUniformLocation(m_renderer_id, name.c_str());
+
+		if (location == -1) {
+			MOD_WARN("Uniform '{0}' does not exist (or was optimized away)!", name);
+		}
+
+		// 3. Add to Cache
 		m_UniformLocationCache[name] = location;
+
 		return location;
 	}
 

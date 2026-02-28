@@ -28,8 +28,7 @@ namespace modulus::platform {
 		virtual int height() const = 0;
 		virtual std::pair<int, int> get_size() const = 0;
 
-		// CRITICAL: Needed for the Graphics module later
-		// Returns the raw GLFWwindow* (cast to void*)
+		// Returns the raw GLFWwindow* (cast to void*), needed for the Graphics module later
 		virtual void* get_native_handle() const = 0;
 	};
 
