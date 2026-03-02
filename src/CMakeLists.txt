@@ -2,8 +2,8 @@
 # 1. Modulus Core (Standalone - No external dependencies)
 # ==============================================================================
 add_library(modulus_core STATIC
-    core/log.cpp
-    core/file.cpp
+    "core/log.cpp"
+    "core/file.cpp"
 )
 add_library(modulus::core ALIAS modulus_core)
 
@@ -19,8 +19,8 @@ target_include_directories(modulus_core
 # ==============================================================================
 if(MODULUS_BUILD_PLATFORM)
     add_library(modulus_platform STATIC
-        platform/backends/glfw/platform_glfw.cpp
-        platform/backends/glfw/input_glfw.cpp
+        "platform/backends/glfw/platform_glfw.cpp"
+        "platform/backends/glfw/input_glfw.cpp"
     )
     add_library(modulus::platform ALIAS modulus_platform)
 
@@ -43,11 +43,12 @@ if(MODULUS_BUILD_GFX)
     find_package(OpenGL REQUIRED)
 
     add_library(modulus_gfx STATIC
-        gfx/gfx.cpp
-        gfx/backends/opengl/gfx_opengl.cpp
-        gfx/backends/opengl/shader.cpp
-        gfx/backends/opengl/buffer.cpp
-        gfx/backends/opengl/vertex_array.cpp
+        "gfx/gfx.cpp"
+        "gfx/backends/opengl/gfx_opengl.cpp"
+        "gfx/backends/opengl/shader.cpp"
+        "gfx/backends/opengl/buffer.cpp"
+        "gfx/backends/opengl/vertex_array.cpp"
+        "gfx/backends/opengl/texture.cpp"
     )
     add_library(modulus::gfx ALIAS modulus_gfx)
 
@@ -69,7 +70,7 @@ endif()
 # ==============================================================================
 if(MODULUS_BUILD_AUDIO)
     add_library(modulus_audio STATIC
-        audio/audio.cpp
+        "audio/audio.cpp"
     )
 
     add_library(modulus::audio ALIAS modulus_audio)
