@@ -63,6 +63,11 @@ namespace modulus::platform {
 		case Key::D8: return GLFW_KEY_8;
 		case Key::D9: return GLFW_KEY_9;
 
+		case Key::Up: return GLFW_KEY_UP;
+		case Key::Down: return GLFW_KEY_DOWN;
+		case Key::Left: return GLFW_KEY_LEFT;
+		case Key::Right: return GLFW_KEY_RIGHT;
+
 		case Key::Unknown:
 		default: return GLFW_KEY_UNKNOWN;
 		}
