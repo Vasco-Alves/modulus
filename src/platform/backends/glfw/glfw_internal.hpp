@@ -9,4 +9,8 @@ namespace modulus::platform {
 	
 	// Global scroll accumulator
 	extern float g_scrollDeltaY;
+
+	// Which keys went down during the current frame (indexed by GLFW key code).
+	// Filled by the key callback, cleared at the start of every frame.
+	extern bool g_keysPressed[GLFW_KEY_LAST + 1];
 }

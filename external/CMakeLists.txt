@@ -83,15 +83,12 @@ if(MODULUS_BUILD_GFX)
         FetchContent_Declare(
             glm
             GIT_REPOSITORY https://github.com/g-truc/glm.git
-            GIT_TAG        0.9.9.8
+            GIT_TAG        1.0.1
         )
 
-        FetchContent_GetProperties(glm)
-        if(NOT glm_POPULATED)
-            FetchContent_Populate(glm)
-            
-            add_library(glm INTERFACE)
-            target_include_directories(glm INTERFACE ${glm_SOURCE_DIR})
-        endif()
+        # GLM is header-only; don't compile it into a separate library.
+        set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+
+        FetchContent_MakeAvailable(glm)
     endif()
 endif()

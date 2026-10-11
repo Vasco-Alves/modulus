@@ -16,13 +16,45 @@ namespace modulus::platform {
 		MOD_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
-	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 		g_scrollDeltaY += (float)yoffset;
+	}
+
+	static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT instead,
+		// so this only records real presses. (Unknown keys are -1, so we skip those.)
+		if (action == GLFW_PRESS && key >= 0)
+			g_keysPressed[key] = true;
 	}
 
 	GLFWwindow* g_mainWindowHandle = nullptr;
 
 	float g_scrollDeltaY = 0.0f;
+
+	bool g_keysPressed[GLFW_KEY_LAST + 1] = {};
+
+	// How many windows are open right now.
+	// GLFW starts when the first window opens and stops when the last one closes,
+	// so users never have to start or stop the platform module themselves.
+	static int s_window_count = 0;
+
+	static bool start_glfw() {
+		// Redirect GLFW errors to modulus logger
+		glfwSetErrorCallback(glfw_error_callback);
+
+		if (!glfwInit()) {
+			MOD_FATAL("Failed to initialize GLFW!");
+			return false;
+		}
+
+		MOD_INFO("Platform initialized (Backend: GLFW)");
+		return true;
+	}
+
+	static void stop_glfw() {
+		glfwTerminate();
+		MOD_INFO("Platform shutdown.");
+	}
 
 	// =========================================================================
 	// Internal Class: The actual GLFW implementation
@@ -30,6 +62,10 @@ namespace modulus::platform {
 	class GlfwWindow : public IWindow {
 	public:
 		GlfwWindow(const WindowConfig& config) {
+			// The first window starts GLFW
+			if (s_window_count == 0 && !start_glfw())
+				return;
+
 			// Hint to GLFW that we want a modern OpenGL context (3.3+ Core)
 			// This is required for MacOS and recommended for modern Windows apps.
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -51,47 +87,65 @@ namespace modulus::platform {
 
 			if (!m_handle) {
 				MOD_FATAL("Failed to create GLFW window!");
-				// In a real engine, we might throw or return nullptr, 
-				// but for MVP, logging fatal is enough context.
+
+				// If no other window is open, nothing needs GLFW anymore
+				if (s_window_count == 0)
+					stop_glfw();
 				return;
 			}
 
+			s_window_count++;
+
+			// The first window is the "main" window: the Input functions read from it
 			if (g_mainWindowHandle == nullptr) {
 				g_mainWindowHandle = m_handle;
+				glfwSetScrollCallback(m_handle, scroll_callback);
+				glfwSetKeyCallback(m_handle, key_callback);
 			}
 
 			// Associate this class instance with the raw GLFW window
 			// (Useful if we need to access 'this' inside static callbacks later)
 			glfwSetWindowUserPointer(m_handle, this);
 
-			// TODO: Move this to Gfx module later.
-			// For now, the window owns the context so we can swap buffers.
+			// GLFW creates the OpenGL context together with the window, so the window owns it.
+			// Making it "current" means OpenGL calls from now on draw into this window.
 			glfwMakeContextCurrent(m_handle);
 
 			// Enable VSync if requested
 			glfwSwapInterval(config.vsync ? 1 : 0);
 
 			MOD_INFO("Window created: {0}x{1} ({2})", config.width, config.height, config.title);
-
-			glfwSetScrollCallback(m_handle, scroll_callback);
 		}
 
 		~GlfwWindow() override {
+			// Window creation failed, so there is nothing to clean up
+			if (!m_handle)
+				return;
+
 			if (g_mainWindowHandle == m_handle) {
 				g_mainWindowHandle = nullptr;
 			}
 
-			if (m_handle) {
-				glfwDestroyWindow(m_handle);
-				m_handle = nullptr;
-			}
+			glfwDestroyWindow(m_handle);
+			m_handle = nullptr;
+
+			// The last window to close stops GLFW
+			s_window_count--;
+			if (s_window_count == 0)
+				stop_glfw();
 		}
 
 		bool update() override {
 			if (!m_handle)
 				return false;
 
-			g_scrollDeltaY = 0.0f;	// Reset scroll
+			// A new frame starts: forget the main window's scroll and key presses from last frame
+			if (m_handle == g_mainWindowHandle) {
+				g_scrollDeltaY = 0.0f;
+				for (bool& pressed : g_keysPressed)
+					pressed = false;
+			}
+
 			glfwPollEvents();		// Process OS events (keyboard, mouse, window resize)
 
 			return !glfwWindowShouldClose(m_handle);
@@ -125,6 +179,16 @@ namespace modulus::platform {
 			return { w, h };
 		}
 
+		void swap_buffers() override {
+			if (m_handle)
+				glfwSwapBuffers(m_handle);
+		}
+
+		GLLoader get_gl_loader() const override {
+			// GLFW's function has a slightly different return type, so it needs a cast
+			return (GLLoader)glfwGetProcAddress;
+		}
+
 		void* get_native_handle() const override {
 			return m_handle;
 		}
@@ -137,26 +201,15 @@ namespace modulus::platform {
 	// Factory Implementation
 	// =========================================================================
 
-	bool init() {
-		// Redirect GLFW errors to modulus logger
-		glfwSetErrorCallback(glfw_error_callback);
-
-		if (!glfwInit()) {
-			MOD_FATAL("Failed to initialize GLFW!");
-			return false;
-		}
-
-		MOD_INFO("Platform initialized (Backend: GLFW)");
-		return true;
-	}
-
-	void shutdown() {
-		glfwTerminate();
-		MOD_INFO("Platform shutdown.");
-	}
-
 	std::unique_ptr<IWindow> create_window(const WindowConfig& config) {
-		return std::make_unique<GlfwWindow>(config);
+		auto window = std::make_unique<GlfwWindow>(config);
+
+		// If creation failed, the error was already logged.
+		// Return nothing, so the caller can check with: if (!window)
+		if (!window->get_native_handle())
+			return nullptr;
+
+		return window;
 	}
 
 } // namespace modulus::platform

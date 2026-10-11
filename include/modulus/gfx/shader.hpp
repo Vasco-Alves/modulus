@@ -12,6 +12,10 @@ namespace modulus::gfx {
 		Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
 		~Shader();
 
+		// Owns a GPU object, so copying is not allowed (both copies would delete it)
+		Shader(const Shader&) = delete;
+		Shader& operator=(const Shader&) = delete;
+
 		void bind() const;
 		void unbind() const;
 

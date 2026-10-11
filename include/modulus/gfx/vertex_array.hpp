@@ -12,6 +12,10 @@ namespace modulus::gfx {
 		VertexArray();
 		~VertexArray();
 
+		// Owns a GPU object, so copying is not allowed (both copies would delete it)
+		VertexArray(const VertexArray&) = delete;
+		VertexArray& operator=(const VertexArray&) = delete;
+
 		void bind() const;
 		void unbind() const;
 

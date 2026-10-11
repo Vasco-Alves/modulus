@@ -14,6 +14,10 @@ namespace modulus::gfx {
 		VertexBuffer(const void* data, size_t size);
 		~VertexBuffer();
 
+		// Owns a GPU object, so copying is not allowed (both copies would delete it)
+		VertexBuffer(const VertexBuffer&) = delete;
+		VertexBuffer& operator=(const VertexBuffer&) = delete;
+
 		void bind() const;
 		void unbind() const;
 
@@ -29,6 +33,10 @@ namespace modulus::gfx {
 		// count: The number of INDICES (integers), not bytes
 		IndexBuffer(const unsigned int* indices, unsigned int count);
 		~IndexBuffer();
+
+		// Owns a GPU object, so copying is not allowed (both copies would delete it)
+		IndexBuffer(const IndexBuffer&) = delete;
+		IndexBuffer& operator=(const IndexBuffer&) = delete;
 
 		void bind() const;
 		void unbind() const;

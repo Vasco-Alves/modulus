@@ -10,6 +10,8 @@ namespace modulus::platform {
 		case Key::Escape: return GLFW_KEY_ESCAPE;
 		case Key::Space: return GLFW_KEY_SPACE;
 		case Key::Enter: return GLFW_KEY_ENTER;
+		case Key::Tab: return GLFW_KEY_TAB;
+		case Key::Backspace: return GLFW_KEY_BACKSPACE;
 
 			// Letters
 		case Key::A: return GLFW_KEY_A;
@@ -84,6 +86,18 @@ namespace modulus::platform {
 		// The actual GLFW call
 		int state = glfwGetKey(g_mainWindowHandle, glfw_key);
 		return state == GLFW_PRESS || state == GLFW_REPEAT;
+	}
+
+	bool Input::is_key_pressed(Key key) {
+		if (!g_mainWindowHandle)
+			return false;
+
+		int glfw_key = to_glfw_key(key);
+		if (glfw_key == GLFW_KEY_UNKNOWN)
+			return false;
+
+		// Filled by the key callback in platform_glfw.cpp
+		return g_keysPressed[glfw_key];
 	}
 
 	bool Input::is_mouse_down(MouseButton button) {

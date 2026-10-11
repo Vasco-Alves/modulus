@@ -1,4 +1,3 @@
-#include <modulus/core/context.hpp>
 #include <modulus/core/log.hpp>
 #include <modulus/core/file.hpp>
 
@@ -13,15 +12,7 @@
 #include <modulus/audio/audio.hpp>
 
 int main() {
-	// 1. Initialize System
-	modulus::Context ctx;
-	if (!ctx.is_valid())
-		return -1;
-
-	if (!modulus::audio::init())
-		return -1;
-
-	// 2. Create Window
+	// 1. Create Window (this also starts the platform module)
 	modulus::platform::WindowConfig config;
 	config.title = "Modulus Engine - First Triangle";
 	config.width = 800;
@@ -31,7 +22,8 @@ int main() {
 	if (!window)
 		return -1;
 
-	if (!modulus::gfx::init())
+	// 2. Start Graphics (it draws into the window, so it needs one)
+	if (!modulus::gfx::init(*window))
 		return -1;
 
 	// =========================================================================
@@ -70,26 +62,38 @@ int main() {
 	// 4. Setup Shader (The "Painter")
 	// =========================================================================
 
-	auto vertSrc = modulus::core::File::read_text("assets/shaders/triangle.vert");
-	auto fragSrc = modulus::core::File::read_text("assets/shaders/triangle.frag");
+	// app_path() finds the assets next to the program, whatever folder it was started from
+	auto vertSrc = modulus::core::File::read_text(modulus::core::File::app_path("assets/shaders/triangle.vert"));
+	auto fragSrc = modulus::core::File::read_text(modulus::core::File::app_path("assets/shaders/triangle.frag"));
 
 	if (!vertSrc || !fragSrc) {
-		MOD_FATAL("Could not load shaders! Check your working directory.");
+		MOD_FATAL("Could not load shaders! Is the assets folder next to the program?");
 		return -1;
 	}
 
 	auto shader = std::make_shared<modulus::gfx::Shader>(*vertSrc, *fragSrc);
 
 	// =========================================================================
-	// 5. Main Loop
+	// 5. Start Audio
+	// =========================================================================
+
+	// Started last, so the "return -1" lines above never have to stop it
+	if (!modulus::audio::init())
+		return -1;
+
+	std::string soundPath = modulus::core::File::app_path("assets/test.mp3");
+
+	// =========================================================================
+	// 6. Main Loop
 	// =========================================================================
 	while (window->update()) {
 		if (modulus::platform::Input::is_key_down(modulus::platform::Key::Escape)) {
 			window->close();
 		}
 
-		if (modulus::platform::Input::is_key_down(modulus::platform::Key::Space)) {
-			modulus::audio::play_sound("assets/test.mp3");
+		// "pressed", not "down": play once per press, not every frame while held
+		if (modulus::platform::Input::is_key_pressed(modulus::platform::Key::Space)) {
+			modulus::audio::play_sound(soundPath);
 		}
 
 		// 1. Clear Screen
@@ -106,86 +110,8 @@ int main() {
 		modulus::gfx::present(*window);
 	}
 
-	// 6. Cleanup
+	// 7. Cleanup
+	// Audio is stopped by hand. Everything else (graphics objects, the window and the platform) is cleaned up automatically when main() ends.
 	modulus::audio::shutdown();
-
 	return 0;
 }
-
-
-/*
-#include <modulus/core/log.hpp>
-#include <modulus/platform/platform.hpp>
-
-int main() {
-	MOD_INFO("Starting Hello Window Example...");
-
-	// 1. Initialize Platform (GLFW)
-	if (!modulus::platform::init()) {
-		return -1;
-	}
-
-	// 2. Create a Window
-	modulus::platform::WindowConfig config;
-	config.title = "Hello Modulus!";
-	config.width = 800;
-	config.height = 600;
-
-	auto window = modulus::platform::create_window(config);
-	if (!window) {
-		modulus::platform::shutdown();
-		return -1;
-	}
-
-	// 3. Main Loop
-	while (window->update()) {
-		// In the future:
-		// gfx::clear();
-		// game::update();
-		// gfx::present();
-	}
-
-	// 4. Cleanup
-	window.reset(); // Destroy window before shutting down GLFW
-	modulus::platform::shutdown();
-
-	return 0;
-}
-*/
-
-/*
-#include <modulus/core/context.hpp>
-#include <modulus/platform/platform.hpp>
-#include <modulus/platform/input.hpp>
-#include <modulus/gfx/graphics.hpp>
-
-int main() {
-	modulus::Context ctx;
-	if (!ctx.is_valid()) return -1;
-
-	modulus::platform::WindowConfig config;
-	config.title = "Modulus Graphics";
-	auto window = modulus::platform::create_window(config);
-	if (!window) return -1;
-
-	if (!modulus::gfx::init()) return -1;
-
-	while (window->update()) {
-		// Update
-		{
-			// Input
-			if (modulus::platform::Input::is_key_down(modulus::platform::Key::Escape)) {
-				window->close();
-			}
-		}
-
-		// Draw
-		{
-			modulus::gfx::clear({ 0.2f, 0.4f, 0.8f, 1.0f });
-			modulus::gfx::present(*window);
-		}
-	}
-
-	return 0;
-}
-*/

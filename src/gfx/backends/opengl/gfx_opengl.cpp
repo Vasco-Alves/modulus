@@ -2,17 +2,14 @@
 #include "modulus/core/log.hpp"
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 namespace modulus::gfx {
 
-	bool init() {
-		// GLAD requires a context to be current BEFORE loading.
-		// Since we create the Window (and context) before calling gfx::init(), 
-		// this is safe *if* the user follows the correct order.
-
-		// Load OpenGL pointers
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+	bool init(platform::IWindow& window) {
+		// OpenGL functions live inside the graphics driver, so their addresses have to be
+		// looked up while the program runs. GLAD does that for us, using the loader
+		// function that the window provides.
+		if (!gladLoadGLLoader(window.get_gl_loader())) {
 			MOD_FATAL("Failed to initialize GLAD!");
 			return false;
 		}
@@ -27,10 +24,6 @@ namespace modulus::gfx {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		return true;
-	}
-
-	void shutdown() {
-		// Nothing strictly needed for OpenGL/GLAD shutdown
 	}
 
 	void set_viewport(int x, int y, int width, int height) {
@@ -49,9 +42,8 @@ namespace modulus::gfx {
 	}
 
 	void present(platform::IWindow& window) {
-		// We need the native GLFW handle to swap buffers
-		GLFWwindow* handle = static_cast<GLFWwindow*>(window.get_native_handle());
-		if (handle) glfwSwapBuffers(handle);
+		// In OpenGL, showing the frame is the window's job
+		window.swap_buffers();
 	}
 
 } // namespace modulus::gfx

@@ -8,8 +8,7 @@ add_library(modulus_core STATIC
 add_library(modulus::core ALIAS modulus_core)
 
 target_include_directories(modulus_core
-    #PUBLIC "${PROJECT_SOURCE_DIR}/include"
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include"
+    PUBLIC "${PROJECT_SOURCE_DIR}/include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 # Core doesn't link to anything!
@@ -43,7 +42,6 @@ if(MODULUS_BUILD_GFX)
     find_package(OpenGL REQUIRED)
 
     add_library(modulus_gfx STATIC
-        "gfx/gfx.cpp"
         "gfx/backends/opengl/gfx_opengl.cpp"
         "gfx/backends/opengl/shader.cpp"
         "gfx/backends/opengl/buffer.cpp"
@@ -59,10 +57,10 @@ if(MODULUS_BUILD_GFX)
     )
 
     target_link_libraries(modulus_gfx
-        PUBLIC  modulus::platform # Needs window handles
+        PUBLIC  modulus::platform # Draws into a platform window (IWindow)
+        PUBLIC  glm               # Public because shader.hpp uses glm::mat4
         PRIVATE glad
         PRIVATE OpenGL::GL
-        PRIVATE glfw
     )
 endif()
 
@@ -85,8 +83,6 @@ if(MODULUS_BUILD_AUDIO)
         PUBLIC modulus::core   # Needs logging
         PRIVATE miniaudio      # The library we defined in external/CMakeLists.txt
     )
-#     # Define MINIAUDIO_IMPLEMENTATION in this compilation unit
-#     target_compile_definitions(modulus_audio PRIVATE MINIAUDIO_IMPLEMENTATION)
 endif()
 
 
@@ -109,7 +105,7 @@ if(MODULUS_BUILD_GFX)
     target_link_libraries(modulus_all INTERFACE modulus::gfx)
 endif()
 
-if(MODULUS_BUILD_GFX)
+if(MODULUS_BUILD_AUDIO)
     target_link_libraries(modulus_all INTERFACE modulus::audio)
 endif()
     

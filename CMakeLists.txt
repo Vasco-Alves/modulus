@@ -42,8 +42,7 @@ endif()
 # Module Configuration
 # ==============================================================================
 
-# Core modules are usually always ON
-option(MODULUS_BUILD_CORE     "Build the Core module"     ON)
+# Core is always built. The other modules are optional.
 option(MODULUS_BUILD_PLATFORM "Build the Platform module" ON)
 option(MODULUS_BUILD_GFX      "Build the Graphics module" ON)
 option(MODULUS_BUILD_AUDIO    "Build the Audio module"    ON)
@@ -58,16 +57,14 @@ message(STATUS "-------------------------------------------------")
 message(STATUS "Modulus Configuration (Top Level: ${MODULUS_IS_TOP_LEVEL})")
 message(STATUS "  Platform Module: ${MODULUS_BUILD_PLATFORM}")
 message(STATUS "  Graphics Module: ${MODULUS_BUILD_GFX}")
+message(STATUS "  Audio Module:    ${MODULUS_BUILD_AUDIO}")
 message(STATUS "  Examples:        ${MODULUS_BUILD_EXAMPLES}")
 message(STATUS "-------------------------------------------------")
 
 # ==============================================================================
 # Dependencies
 # ==============================================================================
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# This adds GLAD, Miniaudio, and potentially GLFW.
-# (Note: Ensure your external/CMakeLists.txt checks 'if(NOT TARGET glfw)'!)
+# Adds only the libraries the enabled modules need (GLFW, GLAD, GLM, miniaudio).
 add_subdirectory(external)
 
 # ==============================================================================

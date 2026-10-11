@@ -11,6 +11,10 @@ namespace modulus::gfx {
 		Texture2D(const std::string& path);
 		~Texture2D();
 
+		// Owns a GPU object, so copying is not allowed (both copies would delete it)
+		Texture2D(const Texture2D&) = delete;
+		Texture2D& operator=(const Texture2D&) = delete;
+
 		void bind(uint32_t slot = 0) const;
 		void unbind() const;
 
