@@ -150,6 +150,28 @@ TEST_F(FontTest, TrueTypeFontsHaveAccentedLetters) {
 	EXPECT_TRUE(same_glyph(lato->get_glyph(0x85), question_mark));   // An invisible control code
 }
 
+TEST_F(FontTest, TrueTypeFontsKernPairsLikeAV) {
+	auto lato = gfx::Font::load(MODULUS_TEST_FONT, 32.0f);
+	ASSERT_NE(lato, nullptr);
+
+	// "AV" and "To" go closer together than their advances alone would put them
+	float kerning = lato->get_kerning('A', 'V');
+	EXPECT_LT(kerning, 0.0f);
+	EXPECT_LT(lato->get_kerning('T', 'o'), 0.0f);
+
+	// measure() counts it, scaled with the text...
+	float advances = lato->get_glyph('A').advance + lato->get_glyph('V').advance;
+	EXPECT_FLOAT_EQ(lato->measure("AV", 32.0f).x, advances + kerning);
+	EXPECT_FLOAT_EQ(lato->measure("AV", 64.0f).x, 2.0f * (advances + kerning));
+
+	// ...but only between characters next to each other on the same line
+	EXPECT_FLOAT_EQ(lato->measure("A\nVVVV", 32.0f).x, lato->measure("VVVV", 32.0f).x);
+
+	// Characters the font doesn't have (drawn as '?') aren't kerned, and the built-in font has no kerning
+	EXPECT_FLOAT_EQ(lato->get_kerning('A', 0x4E2D), 0.0f);
+	EXPECT_FLOAT_EQ(font->get_kerning('A', 'V'), 0.0f);
+}
+
 TEST_F(FontTest, LoadingAMissingOrBrokenFontFails) {
 	// A file that isn't a font
 	std::filesystem::path not_a_font = std::filesystem::temp_directory_path() / "modulus_test_not_a_font.ttf";

@@ -36,7 +36,7 @@ Instead of spending the start of every project gluing libraries together (window
 There is nothing to install by hand:
 
 - **GLFW** and **GLM** are downloaded automatically by CMake (FetchContent).
-- **GLAD**, **miniaudio**, **stb_image** and **stb_truetype** are already included in `external/`.
+- **GLAD**, **miniaudio**, **stb_image** and **stb_truetype** are already included in `external/`. stb_truetype has a small fix, marked `MODULUS PATCH`, so that it finds the kerning in big fonts like Lato.
 
 If your own project already provides GLFW or GLM (for example through vcpkg), Modulus uses those instead of downloading them. It looks for the `glfw` and `glm::glm` targets, so call `find_package` before `add_subdirectory(modulus)`.
 
@@ -131,7 +131,7 @@ renderer->draw_text({ 20, 20 }, "Score: 42", 20.0f, white);
 renderer->draw_text(center, "PAUSED", 40.0f, white, { .origin = { 0.5f, 0.5f } }); // Centered on 'center'
 ```
 
-Or load a TrueType font (`.ttf`). It has the accented letters of Western European languages too, and looks sharpest at the height it was loaded at:
+Or load a TrueType font (`.ttf`). It has the accented letters of Western European languages too, is kerned (pairs like "AV" sit closer together, as the font says), and looks sharpest at the height it was loaded at:
 
 ```cpp
 auto font = modulus::gfx::Font::load(modulus::core::File::app_path("assets/fonts/Lato-Regular.ttf"), 32.0f);

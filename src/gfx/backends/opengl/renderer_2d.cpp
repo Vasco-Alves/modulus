@@ -216,13 +216,19 @@ void main() {
 
 		DrawOptions glyph_options = options;
 		glm::vec2 pen = { 0.0f, 0.0f }; // Where the next character starts, from the text's top-left
+		char32_t previous = 0;          // The character before this one on its line (0 at the start)
 
 		for (size_t index = 0; index < text.size();) {
 			char32_t c = Font::next_character(text, index);
 			if (c == '\n') {
 				pen = { 0.0f, pen.y + height };
+				previous = 0;
 				continue;
 			}
+
+			// Some pairs, like "AV", sit closer together than their advances say (the same as in measure())
+			pen.x += font.get_kerning(previous, c) * scale;
+			previous = c;
 
 			const Font::Glyph& glyph = font.get_glyph(c);
 			glm::vec2 glyph_top_left = pen + glyph.offset * scale;

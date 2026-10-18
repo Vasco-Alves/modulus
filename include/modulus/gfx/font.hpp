@@ -4,9 +4,11 @@
 
 #include <glm/glm.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace modulus::gfx {
@@ -41,6 +43,11 @@ namespace modulus::gfx {
 		// How tall one line is, in the font's pixels
 		float get_line_height() const { return m_line_height; }
 
+		// How much closer (negative) or further apart (positive) two characters next to each other
+		// should be than their advances say, in the font's pixels. Pairs like "AV" or "To" look better
+		// nudged together ("kerning"). TrueType fonts say which pairs need it; the built-in font has none.
+		float get_kerning(char32_t left, char32_t right) const;
+
 		// The size 'text' takes up when drawn 'height' tall: the width of its longest line,
 		// and the height of all its lines together ('\n' starts a new line)
 		glm::vec2 measure(std::string_view text, float height) const;
@@ -56,6 +63,9 @@ namespace modulus::gfx {
 		std::vector<Glyph> m_glyphs;      // For the characters from m_first_character on, in order
 		char32_t m_first_character = ' ';
 		float m_line_height = 0.0f;
+
+		// Only the pairs that need kerning, keyed by both characters (left one in the high 32 bits)
+		std::unordered_map<uint64_t, float> m_kerning;
 	};
 
 } // namespace modulus::gfx

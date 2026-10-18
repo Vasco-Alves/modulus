@@ -1,6 +1,9 @@
 // stb_truetype.h - v1.26 - public domain
 // authored from 2009-2021 by Sean Barrett / RAD Game Tools
 //
+// MODULUS PATCH: changed so that kerning is also found in GPOS Extension lookups, where big fonts
+// like Lato keep it (search for MODULUS PATCH). Re-apply it when updating this file.
+//
 // =======================================================================
 //
 //    NO SECURITY GUARANTEE -- DO NOT USE THIS ON UNTRUSTED FONT FILES
@@ -2519,12 +2522,18 @@ static stbtt_int32 stbtt__GetGlyphGPOSInfoAdvance(const stbtt_fontinfo *info, in
       stbtt_uint16 lookupType = ttUSHORT(lookupTable);
       stbtt_uint16 subTableCount = ttUSHORT(lookupTable + 4);
       stbtt_uint8 *subTableOffsets = lookupTable + 6;
+      // MODULUS PATCH: big fonts (like Lato) wrap their lookups in Extension lookups (type 9). Each of
+      // their subtables holds the real lookup type, and a 32-bit offset to the real subtable.
+      int isExtension = (lookupType == 9);
+      if (isExtension && subTableCount > 0)
+         lookupType = ttUSHORT(lookupTable + ttUSHORT(subTableOffsets) + 2);
       if (lookupType != 2) // Pair Adjustment Positioning Subtable
          continue;
 
       for (sti=0; sti<subTableCount; sti++) {
          stbtt_uint16 subtableOffset = ttUSHORT(subTableOffsets + 2 * sti);
-         stbtt_uint8 *table = lookupTable + subtableOffset;
+         stbtt_uint8 *table = isExtension ? lookupTable + subtableOffset + ttULONG(lookupTable + subtableOffset + 4) // MODULUS PATCH
+                                          : lookupTable + subtableOffset;
          stbtt_uint16 posFormat = ttUSHORT(table);
          stbtt_uint16 coverageOffset = ttUSHORT(table + 2);
          stbtt_int32 coverageIndex = stbtt__GetCoverageIndex(table + coverageOffset, glyph1);

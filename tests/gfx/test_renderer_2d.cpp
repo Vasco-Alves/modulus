@@ -5,8 +5,10 @@
 #include <modulus/gfx/renderer_2d.hpp>
 #include <modulus/gfx/texture.hpp>
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <vector>
 
 using namespace modulus;
@@ -397,4 +399,42 @@ TEST_F(Renderer2DTest, DrawsTextWithATrueTypeFont) {
 	}
 	EXPECT_GT(red_inside, 200);
 	EXPECT_EQ(drawn_outside, 0);
+}
+
+TEST_F(Renderer2DTest, TrueTypeTextIsKernedLikeMeasureSays) {
+	auto lato = gfx::Font::load(MODULUS_TEST_FONT, 32.0f);
+	ASSERT_NE(lato, nullptr);
+
+	// A pair the font kerns, many times over, on two lines
+	const char* text = "AVAVAVAV\nAVAVAVAV";
+	renderer->begin();
+	renderer->draw_text({ 10.0f, 10.0f }, text, *lato, 32.0f, red);
+	renderer->end();
+
+	// The leftmost and rightmost columns a line drew anything in
+	auto pixels = target->pixels(0, 0, window_width, 80);
+	auto columns_drawn = [&](int top) {
+		int left = window_width, right = -1;
+		for (int y = top; y < top + 32; ++y) {
+			for (int x = 0; x < window_width; ++x) {
+				if (!has_color(pixels[y][x], 0, 0, 255, 0)) {
+					left = std::min(left, x);
+					right = std::max(right, x);
+				}
+			}
+		}
+		return std::pair(left, right);
+	};
+	auto [first_left, first_right] = columns_drawn(10);
+	auto [second_left, second_right] = columns_drawn(42);
+
+	// The text ends where measure() says, so both kerned it the same way (the last 'V' reaches to
+	// within a pixel or two of the end of its advance)
+	float end = 10.0f + lato->measure(text, 32.0f).x;
+	EXPECT_LE(first_right, end + 1.0f);
+	EXPECT_GE(first_right, end - 3.0f);
+
+	// And the second line is drawn just like the first: no kerning carries over from the line above
+	EXPECT_EQ(second_left, first_left);
+	EXPECT_EQ(second_right, first_right);
 }

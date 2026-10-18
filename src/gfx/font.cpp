@@ -14,6 +14,11 @@
 
 namespace modulus::gfx {
 
+	// The key for a pair of characters in Font::m_kerning: the left one in the high 32 bits
+	static uint64_t kerning_key(char32_t left, char32_t right) {
+		return (uint64_t(left) << 32) | right;
+	}
+
 	// The built-in font's characters, from ' ' to '~' in ASCII order. Each one is 5 pixels wide and
 	// 8 tall, one string per row from the top, and '#' is a pixel. Capitals and digits use the top
 	// 7 rows; the 8th row is for the tails of g, j, p, q, y and the like.
@@ -224,7 +229,8 @@ namespace modulus::gfx {
 		// need to know how far below the top of a line that is
 		int ascent = 0, descent = 0, line_gap = 0;
 		stbtt_GetFontVMetrics(&info, &ascent, &descent, &line_gap);
-		float baseline = ascent * stbtt_ScaleForPixelHeight(&info, pixel_height);
+		float scale = stbtt_ScaleForPixelHeight(&info, pixel_height); // From the font file's units to pixels
+		float baseline = ascent * scale;
 
 		std::shared_ptr<Font> font(new Font());
 		font->m_line_height = pixel_height;
@@ -242,7 +248,28 @@ namespace modulus::gfx {
 			glyph.advance = character.xadvance;
 		}
 
-		MOD_INFO("Loaded font {} ({} pixels, in a {}x{} texture)", path, pixel_height, width, height);
+		// Kerning: pairs of characters the font moves closer together (or further apart), like "AV".
+		// Looking a pair up in the font file is slow, so look up every pair once, now, and keep the
+		// ones that need it. First, each character's number in the font file (0: the font doesn't have it).
+		std::vector<int> font_glyphs(count);
+		for (int i = 0; i < count; ++i) {
+			bool control_code = first + i >= 127 && first + i < 160; // Drawn as '?' (see get_glyph)
+			font_glyphs[i] = control_code ? 0 : stbtt_FindGlyphIndex(&info, first + i);
+		}
+
+		for (int left = 0; left < count; ++left) {
+			for (int right = 0; right < count; ++right) {
+				if (font_glyphs[left] == 0 || font_glyphs[right] == 0)
+					continue;
+
+				int kerning = stbtt_GetGlyphKernAdvance(&info, font_glyphs[left], font_glyphs[right]);
+				if (kerning != 0)
+					font->m_kerning[kerning_key(char32_t(first + left), char32_t(first + right))] = kerning * scale;
+			}
+		}
+
+		MOD_INFO("Loaded font {} ({} pixels, in a {}x{} texture, {} kerning pairs)", path, pixel_height, width, height,
+		         font->m_kerning.size());
 		return font;
 	}
 
@@ -255,20 +282,28 @@ namespace modulus::gfx {
 		return m_glyphs[character - m_first_character];
 	}
 
+	float Font::get_kerning(char32_t left, char32_t right) const {
+		auto pair = m_kerning.find(kerning_key(left, right));
+		return pair != m_kerning.end() ? pair->second : 0.0f;
+	}
+
 	glm::vec2 Font::measure(std::string_view text, float height) const {
 		float scale = height / m_line_height;
 		float line_width = 0.0f;
 		float widest = 0.0f;
 		int lines = 1;
+		char32_t previous = 0; // The character before this one on its line (0 at the start, never kerned)
 
 		for (size_t index = 0; index < text.size();) {
 			char32_t character = next_character(text, index);
 			if (character == '\n') {
 				widest = std::max(widest, line_width);
 				line_width = 0.0f;
+				previous = 0;
 				++lines;
 			} else {
-				line_width += get_glyph(character).advance * scale;
+				line_width += (get_kerning(previous, character) + get_glyph(character).advance) * scale;
+				previous = character;
 			}
 		}
 
