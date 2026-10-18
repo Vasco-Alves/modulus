@@ -71,7 +71,10 @@ int main() {
 		return -1;
 	}
 
-	auto shader = std::make_shared<modulus::gfx::Shader>(*vertSrc, *fragSrc);
+	// create() returns nullptr if the shader doesn't compile (the compiler's error is logged)
+	auto shader = modulus::gfx::Shader::create(*vertSrc, *fragSrc);
+	if (!shader)
+		return -1;
 
 	// =========================================================================
 	// 5. Start Audio

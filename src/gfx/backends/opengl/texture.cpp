@@ -13,7 +13,10 @@ namespace modulus::gfx {
 
 		unsigned char* localBuffer = stbi_load(path.c_str(), &m_width, &m_height, &m_bpp, 4);
 		if (!localBuffer) {
-			MOD_ERROR("Failed to load texture: {0}", path);
+			MOD_ERROR("Failed to load texture: {0} ({1})", path, stbi_failure_reason());
+
+			// stb_image may have filled these in before it failed. m_rendererID stays 0, so is_valid() is false.
+			m_width = m_height = m_bpp = 0;
 			return;
 		}
 

@@ -8,27 +8,8 @@
 
 namespace modulus::gfx {
 
-	// Helper: Checks if compilation/linking failed and logs the error
-	static void check_compile_errors(unsigned int id, bool isProgram) {
-		int success;
-		char infoLog[1024];
-
-		if (isProgram) {
-			glGetProgramiv(id, GL_LINK_STATUS, &success);
-			if (!success) {
-				glGetProgramInfoLog(id, 1024, nullptr, infoLog);
-				MOD_ERROR("Shader Linking Error:\n{0}", infoLog);
-			}
-		} else {
-			glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-			if (!success) {
-				glGetShaderInfoLog(id, 1024, nullptr, infoLog);
-				MOD_ERROR("Shader Compilation Error:\n{0}", infoLog);
-			}
-		}
-	}
-
-	// Helper: Compilation logic
+	// Helper: Compiles one stage (vertex or fragment).
+	// Returns 0 if it doesn't compile, after logging the compiler's error message.
 	static unsigned int compile_shader(unsigned int type, const std::string& source) {
 		unsigned int id = glCreateShader(type);
 		const char* src = source.c_str();
@@ -36,26 +17,54 @@ namespace modulus::gfx {
 		glShaderSource(id, 1, &src, nullptr);
 		glCompileShader(id);
 
-		check_compile_errors(id, false);
+		int success = 0;
+		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			char info_log[1024];
+			glGetShaderInfoLog(id, 1024, nullptr, info_log);
+			MOD_ERROR("{} shader compilation error:\n{}", type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", info_log);
+
+			glDeleteShader(id);
+			return 0;
+		}
 		return id;
 	}
 
 	Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc) {
-		m_renderer_id = glCreateProgram();
-
 		unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertexSrc);
 		unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragmentSrc);
 
-		glAttachShader(m_renderer_id, vs);
-		glAttachShader(m_renderer_id, fs);
-		glLinkProgram(m_renderer_id);
+		// Only link if both stages compiled. Otherwise m_renderer_id stays 0, which means "not valid".
+		if (vs != 0 && fs != 0) {
+			m_renderer_id = glCreateProgram();
+			glAttachShader(m_renderer_id, vs);
+			glAttachShader(m_renderer_id, fs);
+			glLinkProgram(m_renderer_id);
 
-		check_compile_errors(m_renderer_id, true);
+			int success = 0;
+			glGetProgramiv(m_renderer_id, GL_LINK_STATUS, &success);
+			if (!success) {
+				char info_log[1024];
+				glGetProgramInfoLog(m_renderer_id, 1024, nullptr, info_log);
+				MOD_ERROR("Shader linking error:\n{}", info_log);
 
-		// Ideally detach before deleting, but strictly deleting works too
-		// as they are flagged for deletion when detached/program destroyed.
+				glDeleteProgram(m_renderer_id);
+				m_renderer_id = 0;
+			}
+		}
+
+		// The program keeps what it needs, so the compiled stages can go.
+		// (A stage that failed is 0 here, and deleting 0 does nothing.)
 		glDeleteShader(vs);
 		glDeleteShader(fs);
+	}
+
+	std::shared_ptr<Shader> Shader::create(const std::string& vertexSrc, const std::string& fragmentSrc) {
+		auto shader = std::make_shared<Shader>(vertexSrc, fragmentSrc);
+		if (!shader->is_valid())
+			return nullptr; // The error was already logged
+
+		return shader;
 	}
 
 	Shader::~Shader() {
@@ -93,6 +102,10 @@ namespace modulus::gfx {
 	}
 
 	int Shader::get_cached_uniform_location(const std::string& name) const {
+		// A shader that didn't compile has no uniforms (and its error was already logged)
+		if (!is_valid())
+			return -1;
+
 		// 1. Check Cache
 		auto it = m_UniformLocationCache.find(name);
 		if (it != m_UniformLocationCache.end())

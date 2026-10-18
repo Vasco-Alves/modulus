@@ -7,14 +7,27 @@
 
 #include <modulus/gfx/graphics.hpp>
 #include <modulus/gfx/shader.hpp>
+#include <modulus/gfx/texture.hpp>
 #include <modulus/gfx/vertex_array.hpp>
 #include <modulus/platform/platform.hpp>
 
+#include <filesystem>
+#include <fstream>
 #include <memory>
 
 using namespace modulus;
 
 namespace {
+
+	// Passes the position through
+	const char* position_vertex_shader = R"(#version 330 core
+		layout(location = 0) in vec3 a_Position;
+		void main() { gl_Position = vec4(a_Position, 1.0); })";
+
+	// Paints everything red
+	const char* red_fragment_shader = R"(#version 330 core
+		layout(location = 0) out vec4 o_Color;
+		void main() { o_Color = vec4(1.0, 0.0, 0.0, 1.0); })";
 
 	class OpenGLTest : public ::testing::Test {
 	protected:
@@ -150,18 +163,8 @@ TEST_F(OpenGLTest, DrawsATriangle) {
 	ASSERT_EQ(glCheckFramebufferStatus(GL_FRAMEBUFFER), GLenum(GL_FRAMEBUFFER_COMPLETE));
 	gfx::set_viewport(0, 0, size, size);
 
-	gfx::Shader shader(
-		R"(#version 330 core
-		layout(location = 0) in vec3 a_Position;
-		void main() { gl_Position = vec4(a_Position, 1.0); })",
-
-		R"(#version 330 core
-		layout(location = 0) out vec4 o_Color;
-		void main() { o_Color = vec4(1.0, 0.0, 0.0, 1.0); })"
-	);
-	GLint linked = GL_FALSE;
-	glGetProgramiv(shader.get_id(), GL_LINK_STATUS, &linked);
-	ASSERT_EQ(linked, GL_TRUE);
+	auto shader = gfx::Shader::create(position_vertex_shader, red_fragment_shader);
+	ASSERT_NE(shader, nullptr);
 
 	// A triangle around the center of the image
 	float triangle[] = { -0.5f, -0.5f, 0.0f,   0.5f, -0.5f, 0.0f,   0.0f, 0.5f, 0.0f };
@@ -173,7 +176,7 @@ TEST_F(OpenGLTest, DrawsATriangle) {
 	mesh->set_index_buffer(std::make_shared<gfx::IndexBuffer>(triangle_indices, 3));
 
 	gfx::clear({ 0.0f, 0.0f, 1.0f, 1.0f }); // Blue
-	shader.bind();
+	shader->bind();
 	gfx::draw_indexed(mesh);
 
 	unsigned char center[4] = {}, corner[4] = {};
@@ -188,4 +191,50 @@ TEST_F(OpenGLTest, DrawsATriangle) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDeleteRenderbuffers(1, &color_buffer);
 	glDeleteFramebuffers(1, &framebuffer);
+}
+
+TEST_F(OpenGLTest, ShaderCreateReturnsNullWhenCompilingFails) {
+	EXPECT_EQ(gfx::Shader::create("this is not GLSL", red_fragment_shader), nullptr);
+	EXPECT_EQ(gfx::Shader::create(position_vertex_shader, "neither is this"), nullptr);
+
+	gfx::Shader shader("this is not GLSL", red_fragment_shader);
+	EXPECT_FALSE(shader.is_valid());
+	shader.set_int("u_Anything", 1); // Does nothing, instead of calling OpenGL with a broken shader
+}
+
+TEST_F(OpenGLTest, ShaderCreateReturnsNullWhenLinkingFails) {
+	// This fragment shader compiles, but it has no main(), so the program can't be linked
+	const char* fragment_shader = R"(#version 330 core
+		layout(location = 0) out vec4 o_Color;
+		vec4 red() { return vec4(1.0, 0.0, 0.0, 1.0); })";
+
+	testing::internal::CaptureStderr();
+	auto shader = gfx::Shader::create(position_vertex_shader, fragment_shader);
+	std::string errors = testing::internal::GetCapturedStderr();
+
+	EXPECT_EQ(shader, nullptr);
+	EXPECT_NE(errors.find("Shader linking error"), std::string::npos) << errors;
+}
+
+TEST_F(OpenGLTest, TextureCreateReturnsNullForAMissingFile) {
+	EXPECT_EQ(gfx::Texture2D::create("this/image/does/not/exist.png"), nullptr);
+}
+
+TEST_F(OpenGLTest, TextureLoadsAnImage) {
+	// A 2x1 image in the PPM format, which is simple enough to write by hand: a red and a blue pixel
+	std::filesystem::path path = std::filesystem::temp_directory_path() / "modulus_test_texture.ppm";
+	{
+		std::ofstream out(path, std::ios::binary);
+		out << "P6\n2 1\n255\n";
+		const unsigned char pixels[] = { 255, 0, 0,   0, 0, 255 };
+		out.write(reinterpret_cast<const char*>(pixels), sizeof(pixels));
+	}
+
+	auto texture = gfx::Texture2D::create(path.string());
+	std::filesystem::remove(path);
+
+	ASSERT_NE(texture, nullptr);
+	EXPECT_EQ(texture->get_width(), 2);
+	EXPECT_EQ(texture->get_height(), 1);
+	EXPECT_NE(texture->get_renderer_id(), 0u);
 }

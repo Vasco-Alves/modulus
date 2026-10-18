@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -9,12 +10,22 @@ namespace modulus::gfx {
 
 	class Shader {
 	public:
+		// Compiles and links the shader. If that fails, the error is logged and is_valid() returns false.
 		Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
 		~Shader();
+
+		// Like the constructor, but returns nullptr if the shader doesn't compile or link
+		// (the error is logged), so you can check it with: if (!shader)
+		static std::shared_ptr<Shader> create(const std::string& vertexSrc, const std::string& fragmentSrc);
 
 		// Owns a GPU object, so copying is not allowed (both copies would delete it)
 		Shader(const Shader&) = delete;
 		Shader& operator=(const Shader&) = delete;
+
+		// False if the shader didn't compile or link
+		bool is_valid() const {
+			return m_renderer_id != 0;
+		}
 
 		void bind() const;
 		void unbind() const;
