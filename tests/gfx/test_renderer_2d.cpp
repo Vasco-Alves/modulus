@@ -325,3 +325,50 @@ TEST_F(Renderer2DTest, FlippedSpritesStayInTheirCell) {
 	EXPECT_TRUE(has_color(target->pixel(16, 16), 255, 255, 0, 0));   // Yellow on the left now
 	EXPECT_TRUE(has_color(target->pixel(48, 16), 255, 255, 255, 0)); // and white on the right
 }
+
+// The built-in font's 'I' is 5x8 pixels in a 6x10 cell: a bar across the top (columns 1-3), a stem
+// down the middle (column 2, rows 1-5), and a bar across the bottom (row 6). At height 20, each of
+// its pixels is 2x2.
+
+TEST_F(Renderer2DTest, DrawsTextWithTheBuiltinFont) {
+	renderer->begin();
+	renderer->draw_text({ 0.0f, 0.0f }, "I", 20.0f, red);
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(3, 1), 255, 0, 0, 0));  // The top bar
+	EXPECT_TRUE(has_color(target->pixel(4, 6), 255, 0, 0, 0));  // The stem
+	EXPECT_TRUE(has_color(target->pixel(0, 6), 0, 0, 255, 0));  // Left of the stem: empty
+	EXPECT_TRUE(has_color(target->pixel(8, 6), 0, 0, 255, 0));  // Right of the stem: empty
+}
+
+TEST_F(Renderer2DTest, TextOriginIsMeasuredOnTheWholeText) {
+	// "II" is 24x20, so centered on (100, 100) it starts at (88, 90)
+	renderer->begin();
+	renderer->draw_text({ 100.0f, 100.0f }, "II", 20.0f, red, { .origin = { 0.5f, 0.5f } });
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(92, 96), 255, 0, 0, 0));  // The first stem
+	EXPECT_TRUE(has_color(target->pixel(104, 96), 255, 0, 0, 0)); // The second stem
+	EXPECT_TRUE(has_color(target->pixel(98, 96), 0, 0, 255, 0));  // Between them
+}
+
+TEST_F(Renderer2DTest, NewlineStartsANewLine) {
+	renderer->begin();
+	renderer->draw_text({ 0.0f, 0.0f }, "I\nI", 20.0f, red);
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(4, 6), 255, 0, 0, 0));  // First line's stem
+	EXPECT_TRUE(has_color(target->pixel(4, 17), 0, 0, 255, 0)); // The gap below it
+	EXPECT_TRUE(has_color(target->pixel(4, 26), 255, 0, 0, 0)); // Second line's stem
+}
+
+TEST_F(Renderer2DTest, TextBatchesWithEverythingElse) {
+	renderer->begin();
+	renderer->draw_quad({ 0.0f, 0.0f }, { 10.0f, 10.0f }, red);
+	renderer->draw_text({ 0.0f, 20.0f }, "Hi there", 20.0f, green); // 7 characters to draw (not the space)
+	renderer->draw_quad({ 0.0f, 50.0f }, { 10.0f, 10.0f }, red);
+	renderer->end();
+
+	EXPECT_EQ(renderer->get_stats().quads, 9u);
+	EXPECT_EQ(renderer->get_stats().draw_calls, 1u);
+}

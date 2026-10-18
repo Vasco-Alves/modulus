@@ -22,6 +22,7 @@
 #include "modulus/gfx/buffer_layout.hpp"
 #include "modulus/gfx/camera_2d.hpp"
 #include "modulus/gfx/color.hpp"
+#include "modulus/gfx/font.hpp"
 #include "modulus/gfx/graphics.hpp"
 #include "modulus/gfx/renderer_2d.hpp"
 #include "modulus/gfx/shader.hpp"

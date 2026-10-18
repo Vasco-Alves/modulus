@@ -55,6 +55,7 @@ if(MODULUS_BUILD_GFX)
         "gfx/backends/opengl/texture.cpp"
         "gfx/backends/opengl/renderer_2d.cpp"
         "gfx/sprite_sheet.cpp"
+        "gfx/font.cpp"
     )
     add_library(modulus::gfx ALIAS modulus_gfx)
 

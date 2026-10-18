@@ -79,8 +79,8 @@ void main() {
 	std::unique_ptr<Renderer2D> Renderer2D::create(platform::IWindow& window) {
 		// The constructor is private (only create() makes renderers), so std::make_unique can't call it
 		std::unique_ptr<Renderer2D> renderer(new Renderer2D(window));
-		if (!renderer->m_shader)
-			return nullptr; // The shader's error was already logged
+		if (!renderer->m_shader || !renderer->m_builtin_font)
+			return nullptr; // The error was already logged
 
 		return renderer;
 	}
@@ -132,6 +132,8 @@ void main() {
 		m_white_texture = Texture2D::create(1, 1, white);
 		m_texture_slots[0] = m_white_texture.get();
 
+		m_builtin_font = Font::create_builtin();
+
 		m_vertices.reserve(max_quads_per_draw_call * 4);
 	}
 
@@ -165,23 +167,65 @@ void main() {
 		add_quad(position, size, &texture, white, options);
 	}
 
-	void Renderer2D::draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const DrawOptions& options) {
-		if (!sprite.texture || !sprite.texture->is_valid())
-			return; // An empty sprite, for example from SpriteSheet::get() with a cell that doesn't exist
-
-		// The region is in pixels from the image's top-left, but texture coordinates go from 0 to 1,
-		// with the image's top at 1 (OpenGL stores images bottom row first)
+	// The texture coordinates of a sprite's region, as add_quad() wants them.
+	// The region is in pixels from the image's top-left, but texture coordinates go from 0 to 1,
+	// with the image's top at 1 (OpenGL stores images bottom row first).
+	static glm::vec4 get_tex_coords(const Sprite& sprite) {
 		float width = float(sprite.texture->get_width());
 		float height = float(sprite.texture->get_height());
 		const Rect& region = sprite.region;
-		glm::vec4 tex_coords = {
+		return {
 			region.x / width,                           // Left
 			1.0f - region.y / height,                   // Top
 			(region.x + region.width) / width,          // Right
 			1.0f - (region.y + region.height) / height, // Bottom
 		};
+	}
 
-		add_quad(position, size, sprite.texture.get(), white, options, tex_coords);
+	void Renderer2D::draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const DrawOptions& options) {
+		if (!sprite.texture || !sprite.texture->is_valid())
+			return; // An empty sprite, for example from SpriteSheet::get() with a cell that doesn't exist
+
+		add_quad(position, size, sprite.texture.get(), white, options, get_tex_coords(sprite));
+	}
+
+	void Renderer2D::draw_text(glm::vec2 position, std::string_view text, float height, const Color& color,
+	                           const DrawOptions& options) {
+		draw_text(position, text, *m_builtin_font, height, color, options);
+	}
+
+	void Renderer2D::draw_text(glm::vec2 position, std::string_view text, const Font& font, float height,
+	                           const Color& color, const DrawOptions& options) {
+		if (height <= 0.0f)
+			return;
+
+		float scale = height / font.get_line_height();
+		glm::vec2 text_origin = options.origin * font.measure(text, height); // From the text's top-left
+
+		DrawOptions glyph_options = options;
+		glm::vec2 pen = { 0.0f, 0.0f }; // Where the next character starts, from the text's top-left
+
+		for (unsigned char c : text) {
+			if (c == '\n') {
+				pen = { 0.0f, pen.y + height };
+				continue;
+			}
+			if ((c & 0xC0) == 0x80)
+				continue; // The rest of a multi-byte UTF-8 character (the font shows the character once)
+
+			const Font::Glyph& glyph = font.get_glyph(c);
+			glm::vec2 glyph_top_left = pen + glyph.offset * scale;
+			glm::vec2 glyph_size = glyph.size * scale;
+
+			if (c != ' ' && glyph.sprite.texture && glyph_size.x > 0.0f && glyph_size.y > 0.0f) {
+				// The whole text turns around its origin, so give every character that same point
+				// as its origin, measured from the character's own top-left corner
+				glyph_options.origin = (text_origin - glyph_top_left) / glyph_size;
+				add_quad(position, glyph_size, glyph.sprite.texture.get(), color, glyph_options, get_tex_coords(glyph.sprite));
+			}
+
+			pen.x += glyph.advance * scale;
+		}
 	}
 
 	void Renderer2D::end() {

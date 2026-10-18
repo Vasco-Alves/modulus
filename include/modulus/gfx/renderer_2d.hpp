@@ -2,6 +2,7 @@
 
 #include <modulus/gfx/camera_2d.hpp>
 #include <modulus/gfx/color.hpp>
+#include <modulus/gfx/font.hpp>
 #include <modulus/gfx/sprite_sheet.hpp>
 #include <modulus/platform/window.hpp>
 
@@ -9,6 +10,7 @@
 
 #include <array>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 namespace modulus::gfx {
@@ -69,6 +71,19 @@ namespace modulus::gfx {
 		// An empty sprite (no texture) draws nothing.
 		void draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const DrawOptions& options = {});
 
+		// Draws text with the built-in pixel font. 'height' is the height of one line, and '\n'
+		// starts a new line. DrawOptions::origin is measured on the whole text, so { 0.5f, 0.5f }
+		// centers the text on 'position', and rotation turns the text as a whole.
+		void draw_text(glm::vec2 position, std::string_view text, float height, const Color& color,
+		               const DrawOptions& options = {});
+
+		// The same with another font
+		void draw_text(glm::vec2 position, std::string_view text, const Font& font, float height,
+		               const Color& color, const DrawOptions& options = {});
+
+		// The built-in pixel font, for example to measure text: get_builtin_font().measure("Score", 20.0f)
+		const Font& get_builtin_font() const { return *m_builtin_font; }
+
 		// Draws everything collected since begin(). Textures must stay alive until then.
 		void end();
 
@@ -106,6 +121,7 @@ namespace modulus::gfx {
 		std::shared_ptr<VertexBuffer> m_vertex_buffer;
 		std::shared_ptr<VertexArray> m_vertex_array;
 		std::shared_ptr<Texture2D> m_white_texture; // Plain-colored quads "use" this texture, in slot 0
+		std::shared_ptr<Font> m_builtin_font;
 
 		// The current batch: its vertices and the textures they use
 		std::vector<QuadVertex> m_vertices;
