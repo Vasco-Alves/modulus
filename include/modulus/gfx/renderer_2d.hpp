@@ -15,6 +15,7 @@
 
 namespace modulus::gfx {
 
+	class RenderTarget;
 	class Shader;
 	class Texture2D;
 	class VertexArray;
@@ -61,8 +62,12 @@ namespace modulus::gfx {
 		Renderer2D(const Renderer2D&) = delete;
 		Renderer2D& operator=(const Renderer2D&) = delete;
 
-		// Starts collecting quads, seen through 'camera'
+		// Starts collecting quads to draw into the window, seen through 'camera'
 		void begin(const Camera2D& camera = {});
+
+		// Starts collecting quads to draw into 'target' instead of the window. World units are then the
+		// target's pixels (with the default camera). end() goes back to drawing where it was before.
+		void begin(RenderTarget& target, const Camera2D& camera = {});
 
 		void draw_quad(glm::vec2 position, glm::vec2 size, const Color& color, const DrawOptions& options = {});
 		void draw_quad(glm::vec2 position, glm::vec2 size, const Texture2D& texture, const DrawOptions& options = {});
@@ -85,6 +90,7 @@ namespace modulus::gfx {
 		const Font& get_builtin_font() const { return *m_builtin_font; }
 
 		// Draws everything collected since begin(). Textures must stay alive until then.
+		// After begin(target), it also goes back to drawing where things were drawn before.
 		void end();
 
 		// What the last begin() ... end() drew
@@ -99,6 +105,9 @@ namespace modulus::gfx {
 
 	private:
 		explicit Renderer2D(platform::IWindow& window);
+
+		// What both begin()s do: 'size' is what the camera's view spans (the window's or target's size)
+		void start(const Camera2D& camera, glm::vec2 size, RenderTarget* target);
 
 		// One corner of a quad, the way the shader receives it
 		struct QuadVertex {
@@ -130,6 +139,7 @@ namespace modulus::gfx {
 		int m_texture_slot_limit = max_textures_per_draw_call; // Lower if the GPU has fewer texture units
 
 		Stats m_stats;
+		RenderTarget* m_target = nullptr; // What begin() drew into, unless it was the window
 	};
 
 } // namespace modulus::gfx

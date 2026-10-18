@@ -49,6 +49,7 @@ if(MODULUS_BUILD_GFX)
         gfx/test_camera_2d.cpp
         gfx/test_font.cpp          # Needs OpenGL too (for the font texture)
         gfx/test_opengl.cpp   # Opens a hidden window. Skips itself when OpenGL 3.3 isn't available.
+        gfx/test_render_target.cpp # The same
         gfx/test_renderer_2d.cpp   # The same
         gfx/test_sprite_sheet.cpp  # The same
     )

@@ -1,6 +1,7 @@
 #include "modulus/gfx/renderer_2d.hpp"
 #include "modulus/gfx/buffer.hpp"
 #include "modulus/gfx/graphics.hpp"
+#include "modulus/gfx/render_target.hpp"
 #include "modulus/gfx/shader.hpp"
 #include "modulus/gfx/texture.hpp"
 #include "modulus/gfx/vertex_array.hpp"
@@ -140,20 +141,31 @@ void main() {
 	Renderer2D::~Renderer2D() = default;
 
 	void Renderer2D::begin(const Camera2D& camera) {
-		// Quads left from a begin() without end(): draw them, with the camera they were meant for
-		if (!m_vertices.empty()) {
+		// The window size is in the same units as the mouse position. (On high-DPI screens the window
+		// can have more pixels than that, which just makes everything sharper.)
+		auto [width, height] = m_window.get_size();
+		start(camera, { float(width), float(height) }, nullptr);
+	}
+
+	void Renderer2D::begin(RenderTarget& target, const Camera2D& camera) {
+		start(camera, { float(target.get_width()), float(target.get_height()) }, &target);
+	}
+
+	void Renderer2D::start(const Camera2D& camera, glm::vec2 size, RenderTarget* target) {
+		// Quads left from a begin() without end(): draw them where they were meant to go
+		if (!m_vertices.empty())
 			MOD_WARN("Renderer2D::begin() was called again before end(), so the quads from before are drawn now");
-			flush();
-		}
+		end();
 
 		m_stats = {};
 
-		// The window size is in the same units as the mouse position. (On high-DPI screens the window
-		// can have more pixels than that, which just makes everything sharper.)
-		// Never 0, so the math still works while the window is minimized.
-		auto [width, height] = m_window.get_size();
-		glm::vec2 window_size = { float(std::max(width, 1)), float(std::max(height, 1)) };
-		m_shader->set_mat4("u_ViewProjection", camera.get_view_projection(window_size));
+		m_target = target;
+		if (m_target)
+			m_target->bind();
+
+		// Never 0, so the math still works while the window is minimized
+		size = glm::max(size, glm::vec2(1.0f, 1.0f));
+		m_shader->set_mat4("u_ViewProjection", camera.get_view_projection(size));
 	}
 
 	// Textures are drawn in their own colors, unless DrawOptions::tint changes them
@@ -229,6 +241,12 @@ void main() {
 
 	void Renderer2D::end() {
 		flush();
+
+		// Go back to drawing where we drew before begin(target)
+		if (m_target) {
+			m_target->unbind();
+			m_target = nullptr;
+		}
 	}
 
 	void Renderer2D::add_quad(glm::vec2 position, glm::vec2 size, const Texture2D* texture, const Color& color,

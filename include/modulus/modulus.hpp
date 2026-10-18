@@ -24,6 +24,7 @@
 #include "modulus/gfx/color.hpp"
 #include "modulus/gfx/font.hpp"
 #include "modulus/gfx/graphics.hpp"
+#include "modulus/gfx/render_target.hpp"
 #include "modulus/gfx/renderer_2d.hpp"
 #include "modulus/gfx/shader.hpp"
 #include "modulus/gfx/sprite_sheet.hpp"
