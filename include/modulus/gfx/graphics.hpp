@@ -1,13 +1,10 @@
 #pragma once
 
 #include <modulus/platform/window.hpp>
+#include <modulus/gfx/color.hpp>
 #include <modulus/gfx/vertex_array.hpp>
 
 namespace modulus::gfx {
-
-	struct Color {
-		float r, g, b, a;
-	};
 
 	// Starts the graphics module.
 	// Graphics draws into a window, so create the window first and pass it here.

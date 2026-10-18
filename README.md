@@ -73,6 +73,8 @@ target_link_libraries(my_app PRIVATE
 
 The Modulus headers use C++20 (`<format>`), so linking a Modulus target also compiles your target as C++20.
 
+Include the headers you need, or `<modulus/modulus.hpp>` for everything from the modules you linked.
+
 ### Loading Assets
 
 A relative path like `"assets/player.png"` is normally looked up in the folder the program was *started from*, which changes depending on how it is launched. `File::app_path` looks next to the program instead:

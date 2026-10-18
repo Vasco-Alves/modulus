@@ -37,6 +37,7 @@ if(MODULUS_BUILD_PLATFORM)
         PUBLIC  modulus::core
         PRIVATE glfw
     )
+    target_compile_definitions(modulus_platform PUBLIC MODULUS_HAS_PLATFORM) # Lets modulus/modulus.hpp include it
     modulus_enable_warnings(modulus_platform)
 endif()
 
@@ -67,6 +68,7 @@ if(MODULUS_BUILD_GFX)
         PRIVATE glad
         PRIVATE OpenGL::GL
     )
+    target_compile_definitions(modulus_gfx PUBLIC MODULUS_HAS_GFX) # Lets modulus/modulus.hpp include it
     modulus_enable_warnings(modulus_gfx)
 endif()
 
@@ -89,6 +91,7 @@ if(MODULUS_BUILD_AUDIO)
         PUBLIC modulus::core   # Needs logging
         PRIVATE miniaudio      # The library we defined in external/CMakeLists.txt
     )
+    target_compile_definitions(modulus_audio PUBLIC MODULUS_HAS_AUDIO) # Lets modulus/modulus.hpp include it
     modulus_enable_warnings(modulus_audio)
 endif()
 
