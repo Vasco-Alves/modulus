@@ -20,6 +20,7 @@
 #ifdef MODULUS_HAS_GFX
 #include "modulus/gfx/buffer.hpp"
 #include "modulus/gfx/buffer_layout.hpp"
+#include "modulus/gfx/camera_2d.hpp"
 #include "modulus/gfx/color.hpp"
 #include "modulus/gfx/graphics.hpp"
 #include "modulus/gfx/shader.hpp"

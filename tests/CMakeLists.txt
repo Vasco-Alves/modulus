@@ -46,6 +46,7 @@ endif()
 if(MODULUS_BUILD_GFX)
     target_sources(modulus_tests PRIVATE
         gfx/test_buffer_layout.cpp
+        gfx/test_camera_2d.cpp
         gfx/test_opengl.cpp   # Opens a hidden window. Skips itself when OpenGL 3.3 isn't available.
     )
 
