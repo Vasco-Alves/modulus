@@ -9,8 +9,6 @@
 // A real game would load them from PNG files instead:
 //   auto tile_set = gfx::Texture2D::create(core::File::app_path("assets/tiles.png"));
 
-#include <modulus/core/timer.hpp>
-
 #include <modulus/platform/input.hpp>
 #include <modulus/platform/platform.hpp>
 
@@ -148,12 +146,11 @@ int main() {
 	glm::vec2 player = { 160.0f, 90.0f };
 	bool facing_left = false;
 	int collected = 0;
-	core::Timer frame_timer;
 
 	while (window->update()) {
-		// How long the last frame took (at most a tenth of a second, so nothing jumps after a pause)
-		float seconds = std::min(frame_timer.elapsed(), 0.1f);
-		frame_timer.reset();
+		// How long the last frame took (at most a tenth of a second, so nothing jumps after a pause,
+		// like while the window is being dragged)
+		float seconds = std::min(window->get_frame_time(), 0.1f);
 
 		if (Input::is_key_pressed(Key::Escape))
 			window->close();

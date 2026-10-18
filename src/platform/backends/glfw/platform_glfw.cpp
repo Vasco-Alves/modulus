@@ -4,6 +4,9 @@
 
 #include <GLFW/glfw3.h>
 
+#include <chrono>
+#include <optional>
+
 namespace modulus::platform {
 
 	// =========================================================================
@@ -160,6 +163,12 @@ namespace modulus::platform {
 			if (!m_handle)
 				return false;
 
+			// The time since the last update() is how long the last frame took
+			auto now = std::chrono::steady_clock::now();
+			if (m_last_update)
+				m_frame_time = std::chrono::duration<float>(now - *m_last_update).count();
+			m_last_update = now;
+
 			// A new frame starts: forget the main window's scroll, key presses and clicks from last frame
 			if (m_handle == g_main_window_handle) {
 				g_scroll_delta_y = 0.0f;
@@ -177,6 +186,10 @@ namespace modulus::platform {
 		void close() override {
 			if (m_handle)
 				glfwSetWindowShouldClose(m_handle, GLFW_TRUE);
+		}
+
+		float get_frame_time() const override {
+			return m_frame_time;
 		}
 
 		void set_title(const std::string& title) override {
@@ -237,6 +250,9 @@ namespace modulus::platform {
 
 		GLFWwindow* m_handle = nullptr;
 		FramebufferResizeCallback m_framebuffer_resize_callback = nullptr;
+
+		std::optional<std::chrono::steady_clock::time_point> m_last_update; // Empty until the first update()
+		float m_frame_time = 0.0f;
 	};
 
 	// =========================================================================

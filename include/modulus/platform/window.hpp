@@ -30,6 +30,10 @@ namespace modulus::platform {
 		virtual bool update() = 0;       // Polls events. Returns false if window should close.
 		virtual void close() = 0;        // Manually signal close
 
+		// How long the last frame took, in seconds: the time between the last two update() calls
+		// (0 until update() has been called twice). Multiply speeds by it, so that things move just
+		// as fast at any frame rate:  position += speed * window->get_frame_time();
+		virtual float get_frame_time() const = 0;
 
 		virtual void set_title(const std::string& title) = 0;
 		virtual int width() const = 0;

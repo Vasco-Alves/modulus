@@ -147,7 +147,7 @@ modulus::gfx::SpriteSheet sheet(texture, 16, 16);                      // Cells 
 renderer->draw_sprite({ 100, 100 }, { 64, 64 }, sheet.get(2, 1));      // Column 2, row 1
 
 modulus::gfx::SpriteAnimation walk(sheet, 0, 6, 10.0f);                // Cells 0 to 5, 10 per second
-walk.update(frame_seconds);
+walk.update(window->get_frame_time());                                  // Seconds the last frame took
 renderer->draw_sprite(position, { 64, 64 }, walk.get_sprite());
 ```
 
