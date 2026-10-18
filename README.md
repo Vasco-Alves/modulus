@@ -18,7 +18,7 @@ Instead of spending the start of every project gluing libraries together (window
 | -------- | ------------------- | ----------------------------------------- | --------------------------------- |
 | Core     | `modulus::core`     | Logging, files and asset paths, timer     | No external libraries             |
 | Platform | `modulus::platform` | Window, keyboard and mouse input          | GLFW                              |
-| Gfx      | `modulus::gfx`      | Shaders, buffers, vertex arrays, textures | OpenGL 3.3 (GLAD), GLM, stb_image |
+| Gfx      | `modulus::gfx`      | 2D renderer and camera, shaders, buffers, textures | OpenGL 3.3 (GLAD), GLM, stb_image |
 | Audio    | `modulus::audio`    | Playing sound files                       | miniaudio                         |
 
 ## Getting Started
@@ -56,6 +56,7 @@ The programs are in `build/bin` (or `build/bin/Debug` with the Visual Studio gen
 ```bash
 ./build/bin/hello_console
 ./build/bin/hello_window
+./build/bin/hello_2d
 ```
 
 ## Using Modulus in Your Project
@@ -86,6 +87,28 @@ auto text = modulus::core::File::read_text(modulus::core::File::app_path("assets
 ```
 
 Then let CMake copy your assets next to the program on every build. [examples/hello_window/CMakeLists.txt](examples/hello_window/CMakeLists.txt) shows how.
+
+### Drawing in 2D
+
+The 2D renderer draws colored and textured rectangles, collected into as few draw calls as possible. By default, positions are window pixels with (0, 0) at the top-left corner, like the mouse position:
+
+```cpp
+auto window = modulus::platform::create_window({});
+modulus::gfx::init(*window);
+auto renderer = modulus::gfx::Renderer2D::create(*window);
+
+while (window->update()) {
+    modulus::gfx::clear({ 0.1f, 0.1f, 0.1f, 1.0f });
+
+    renderer->begin();
+    renderer->draw_quad({ 100, 100 }, { 50, 50 }, { 1.0f, 0.5f, 0.0f, 1.0f }); // An orange square
+    renderer->end();
+
+    modulus::gfx::present(*window);
+}
+```
+
+Pass a `Camera2D` to `begin()` to scroll and zoom. [examples/hello_2d](examples/hello_2d/main.cpp) shows textures, rotation and a camera that follows the mouse.
 
 ### Build Options
 
