@@ -205,3 +205,19 @@ TEST_F(Renderer2DTest, StatsAreForTheLastBeginAndEnd) {
 	EXPECT_EQ(renderer->get_stats().quads, 1u);
 	EXPECT_EQ(renderer->get_stats().draw_calls, 1u);
 }
+
+TEST_F(Renderer2DTest, NearestFilterKeepsPixelsSharp) {
+	// Red and green side by side, drawn 64 wide: with Nearest, the pixels just left and right
+	// of the middle are pure red and pure green (Linear would blend them into each other)
+	const uint8_t pixels[] = { 255, 0, 0, 255,   0, 255, 0, 255 };
+	auto texture = gfx::Texture2D::create(2, 1, pixels);
+	ASSERT_NE(texture, nullptr);
+	texture->set_filter(gfx::TextureFilter::Nearest);
+
+	renderer->begin();
+	renderer->draw_quad({ 0.0f, 0.0f }, { 64.0f, 8.0f }, *texture);
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(31, 4), 255, 0, 0, 0));
+	EXPECT_TRUE(has_color(target->pixel(32, 4), 0, 255, 0, 0));
+}

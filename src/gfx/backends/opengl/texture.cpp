@@ -60,6 +60,17 @@ namespace modulus::gfx {
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
+	void Texture2D::set_filter(TextureFilter filter) {
+		if (!is_valid())
+			return;
+
+		GLint gl_filter = filter == TextureFilter::Nearest ? GL_NEAREST : GL_LINEAR;
+		glBindTexture(GL_TEXTURE_2D, m_renderer_id);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter); // Drawn smaller than it is
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter); // Drawn bigger than it is
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
 	Texture2D::~Texture2D() {
 		glDeleteTextures(1, &m_renderer_id);
 	}

@@ -6,6 +6,12 @@
 
 namespace modulus::gfx {
 
+	// How a texture looks when it's drawn bigger or smaller than its own size
+	enum class TextureFilter {
+		Linear,  // Smooth: blends neighboring pixels. Good for photos and most art (the default).
+		Nearest, // Sharp: every pixel stays a crisp square. Good for pixel art.
+	};
+
 	class Texture2D {
 	public:
 		// Loads the image. If that fails, the error is logged and is_valid() returns false.
@@ -28,6 +34,8 @@ namespace modulus::gfx {
 
 		int get_width() const { return m_width; }
 		int get_height() const { return m_height; }
+
+		void set_filter(TextureFilter filter);
 
 		// This can be useful for ImGui or raw API access, but keep it generic (uint32_t)
 		uint32_t get_renderer_id() const { return m_renderer_id; }
