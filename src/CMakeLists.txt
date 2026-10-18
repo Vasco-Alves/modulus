@@ -53,6 +53,7 @@ if(MODULUS_BUILD_GFX)
         "gfx/backends/opengl/buffer.cpp"
         "gfx/backends/opengl/vertex_array.cpp"
         "gfx/backends/opengl/texture.cpp"
+        "gfx/backends/opengl/renderer_2d.cpp"
     )
     add_library(modulus::gfx ALIAS modulus_gfx)
 

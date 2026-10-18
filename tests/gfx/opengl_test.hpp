@@ -53,20 +53,29 @@ inline GLint get_attribute(GLuint index, GLenum name) {
 
 // An image to draw into instead of the window, so a test can read the pixels back
 // (a hidden window may have no pixels to read). It also sets the viewport to its size.
+// Like a window, it has a depth buffer, so the depth test behaves the same as on screen.
 class OffscreenTarget {
 public:
 	OffscreenTarget(int width, int height) : m_height(height) {
 		glGenFramebuffers(1, &m_framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+
 		glGenRenderbuffers(1, &m_color_buffer);
 		glBindRenderbuffer(GL_RENDERBUFFER, m_color_buffer);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_color_buffer);
+
+		glGenRenderbuffers(1, &m_depth_buffer);
+		glBindRenderbuffer(GL_RENDERBUFFER, m_depth_buffer);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depth_buffer);
+
 		glViewport(0, 0, width, height);
 	}
 
 	~OffscreenTarget() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteRenderbuffers(1, &m_depth_buffer);
 		glDeleteRenderbuffers(1, &m_color_buffer);
 		glDeleteFramebuffers(1, &m_framebuffer);
 	}
@@ -89,6 +98,7 @@ public:
 private:
 	GLuint m_framebuffer = 0;
 	GLuint m_color_buffer = 0;
+	GLuint m_depth_buffer = 0;
 	int m_height;
 };
 

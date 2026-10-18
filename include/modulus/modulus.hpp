@@ -23,6 +23,7 @@
 #include "modulus/gfx/camera_2d.hpp"
 #include "modulus/gfx/color.hpp"
 #include "modulus/gfx/graphics.hpp"
+#include "modulus/gfx/renderer_2d.hpp"
 #include "modulus/gfx/shader.hpp"
 #include "modulus/gfx/texture.hpp"
 #include "modulus/gfx/vertex_array.hpp"
