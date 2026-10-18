@@ -36,7 +36,7 @@ There is nothing to install by hand:
 - **GLFW** and **GLM** are downloaded automatically by CMake (FetchContent).
 - **GLAD**, **miniaudio** and **stb_image** are already included in `external/`.
 
-If your own project already provides GLFW or GLM (for example through vcpkg), Modulus uses those instead of downloading them.
+If your own project already provides GLFW or GLM (for example through vcpkg), Modulus uses those instead of downloading them. It looks for the `glfw` and `glm::glm` targets, so call `find_package` before `add_subdirectory(modulus)`.
 
 ### Build
 
@@ -71,7 +71,7 @@ target_link_libraries(my_app PRIVATE
 )
 ```
 
-Your project must use C++20 too, because the Modulus headers use `<format>`.
+The Modulus headers use C++20 (`<format>`), so linking a Modulus target also compiles your target as C++20.
 
 ### Loading Assets
 

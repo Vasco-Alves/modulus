@@ -4,16 +4,10 @@ include(FetchContent)
 # 1. GLFW (For Platform Module)
 # ==============================================================================
 if(MODULUS_BUILD_PLATFORM)
-    # CHECK: Did the parent project (Engine + vcpkg) already provide GLFW?
-    if(TARGET glfw OR TARGET glfw3::glfw)
+    # Did the parent project already provide GLFW (for example with find_package(glfw3) through vcpkg)?
+    # Both that and the download below create a target named "glfw", which src/ links directly.
+    if(TARGET glfw)
         message(STATUS "Modulus: Using existing GLFW from parent project.")
-        
-        # Compatibility: Modulus code expects a target named "glfw".
-        # If vcpkg provided "glfw3::glfw", we create an alias.
-        if(TARGET glfw3::glfw AND NOT TARGET glfw)
-            add_library(glfw ALIAS glfw3::glfw)
-        endif()
-
     else()
         # FALLBACK: We are standalone, so download it.
         message(STATUS "Modulus: Fetching GLFW...")
@@ -68,15 +62,12 @@ endif()
 # 4. GLM (Mathematics)
 # ==============================================================================
 if(MODULUS_BUILD_GFX)
-    # CHECK: Did vcpkg provide GLM? (Target is usually 'glm::glm')
-    if(TARGET glm OR TARGET glm::glm)
+    # Did the parent project already provide GLM (for example with find_package(glm) through vcpkg)?
+    # Both that and the download below create a target named "glm::glm", which src/ links directly.
+    # (Renaming it with an alias here wouldn't work: an alias of a target that came from
+    # find_package() is only visible in this folder, not in src/.)
+    if(TARGET glm::glm)
         message(STATUS "Modulus: Using existing GLM from parent project.")
-
-        # Compatibility: Modulus code expects "glm", vcpkg provides "glm::glm"
-        if(TARGET glm::glm AND NOT TARGET glm)
-            add_library(glm ALIAS glm::glm)
-        endif()
-
     else()
         # FALLBACK: Download it.
         message(STATUS "Modulus: Fetching GLM...")

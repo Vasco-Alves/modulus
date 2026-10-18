@@ -13,6 +13,10 @@ target_include_directories(modulus_core
 )
 # Core doesn't link to anything!
 
+# The headers use C++20 (<format>), so anything that links Modulus is compiled as C++20 too
+target_compile_features(modulus_core PUBLIC cxx_std_20)
+modulus_enable_warnings(modulus_core)
+
 # ==============================================================================
 # 2. Modulus Platform (Depends on Core + GLFW)
 # ==============================================================================
@@ -33,6 +37,7 @@ if(MODULUS_BUILD_PLATFORM)
         PUBLIC  modulus::core
         PRIVATE glfw
     )
+    modulus_enable_warnings(modulus_platform)
 endif()
 
 # ==============================================================================
@@ -58,10 +63,11 @@ if(MODULUS_BUILD_GFX)
 
     target_link_libraries(modulus_gfx
         PUBLIC  modulus::platform # Draws into a platform window (IWindow)
-        PUBLIC  glm               # Public because shader.hpp uses glm::mat4
+        PUBLIC  glm::glm          # Public because shader.hpp uses glm::mat4
         PRIVATE glad
         PRIVATE OpenGL::GL
     )
+    modulus_enable_warnings(modulus_gfx)
 endif()
 
 # ==============================================================================
@@ -83,6 +89,7 @@ if(MODULUS_BUILD_AUDIO)
         PUBLIC modulus::core   # Needs logging
         PRIVATE miniaudio      # The library we defined in external/CMakeLists.txt
     )
+    modulus_enable_warnings(modulus_audio)
 endif()
 
 

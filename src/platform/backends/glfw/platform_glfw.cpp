@@ -16,11 +16,11 @@ namespace modulus::platform {
 		MOD_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
-	static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	static void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset) {
 		g_scrollDeltaY += (float)yoffset;
 	}
 
-	static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) {
 		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT instead,
 		// so this only records real presses. (Unknown keys are -1, so we skip those.)
 		if (action == GLFW_PRESS && key >= 0)

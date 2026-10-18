@@ -24,8 +24,18 @@ endif()
 # ==============================================================================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF) 
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Turns on compiler warnings for one of Modulus' own targets.
+# (Only for that target: not for the libraries Modulus uses, and not for your project.)
+function(modulus_enable_warnings target)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra)
+    endif()
+endfunction()
 
 # ==============================================================================
 # Output Directory Layout
@@ -52,6 +62,11 @@ option(MODULUS_BUILD_AUDIO    "Build the Audio module"    ON)
 # If submodule (inside Engine), default Examples to OFF to save build time.
 option(MODULUS_BUILD_EXAMPLES "Build the example applications" ${MODULUS_IS_TOP_LEVEL})
 option(MODULUS_BUILD_TESTS    "Build unit tests"               OFF)
+
+# Graphics draws into a platform window, so it can't be built without Platform
+if(MODULUS_BUILD_GFX AND NOT MODULUS_BUILD_PLATFORM)
+    message(FATAL_ERROR "Modulus: MODULUS_BUILD_GFX needs MODULUS_BUILD_PLATFORM (graphics draws into a platform window).")
+endif()
 
 message(STATUS "-------------------------------------------------")
 message(STATUS "Modulus Configuration (Top Level: ${MODULUS_IS_TOP_LEVEL})")
