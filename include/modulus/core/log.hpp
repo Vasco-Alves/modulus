@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string_view>
-#include <format> 
+#include <format>
+#include <utility>
 // Note: <source_location> later for advanced debugging
 
 namespace modulus::core {
@@ -19,10 +20,11 @@ namespace modulus::core {
 	void log_output(LogLevel level, std::string_view message);
 
 	// Template helper to format the string BEFORE passing it to the logger.
+	// std::format_string checks the format string while compiling, so a mistake like
+	// MOD_INFO("Loaded {} textures") without the number is a compile error, not a crash.
 	template<typename... Args>
-	void log(LogLevel level, std::string_view fmt, Args&&... args) {
-		auto msg = std::vformat(fmt, std::make_format_args(args...));
-		log_output(level, msg);
+	void log(LogLevel level, std::format_string<Args...> fmt, Args&&... args) {
+		log_output(level, std::format(fmt, std::forward<Args>(args)...));
 	}
 
 } // namespace modulus::core
