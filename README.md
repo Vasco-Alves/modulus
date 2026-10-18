@@ -58,6 +58,7 @@ The programs are in `build/bin` (or `build/bin/Debug` with the Visual Studio gen
 ./build/bin/hello_window
 ./build/bin/hello_2d
 ./build/bin/hello_sprites
+./build/bin/hello_text
 ```
 
 ## Using Modulus in Your Project
@@ -121,12 +122,21 @@ renderer->draw_quad(center, { 64, 64 }, *texture, { .origin = { 0.5f, 0.5f }, .r
 renderer->draw_sprite(feet, { 32, 48 }, sprite, { .origin = { 0.5f, 1.0f }, .flip_x = facing_left });
 ```
 
-Text uses a built-in pixel font, so a score or some debug info needs no font file. Its lines are 10 pixels tall, so heights like 20 or 30 keep it sharp:
+Text can use a built-in pixel font, so a score or some debug info needs no font file. Its lines are 10 pixels tall, so heights like 20 or 30 keep it sharp:
 
 ```cpp
 renderer->draw_text({ 20, 20 }, "Score: 42", 20.0f, white);
 renderer->draw_text(center, "PAUSED", 40.0f, white, { .origin = { 0.5f, 0.5f } }); // Centered on 'center'
 ```
+
+Or load a TrueType font (`.ttf`). It has the accented letters of Western European languages too, and looks sharpest at the height it was loaded at:
+
+```cpp
+auto font = modulus::gfx::Font::load(modulus::core::File::app_path("assets/fonts/Lato-Regular.ttf"), 32.0f);
+renderer->draw_text({ 20, 60 }, "Olá, mundo!", *font, 32.0f, white);
+```
+
+Text is UTF-8. With MSVC, compile with `/utf-8` so that string literals like `"Olá"` stay UTF-8. [examples/hello_text](examples/hello_text/main.cpp) shows both kinds of font.
 
 For sprite sheets and tile sets, cut a texture into cells and draw one at a time, or play a few of them as an animation:
 
@@ -156,3 +166,5 @@ Core is always built.
 ## License
 
 MIT. See [LICENSE.txt](LICENSE.txt).
+
+The libraries in `external/` keep their own licenses (in their files). The font in `assets/fonts` is Lato by Łukasz Dziedzic, under the SIL Open Font License: see [assets/fonts/OFL.txt](assets/fonts/OFL.txt).
