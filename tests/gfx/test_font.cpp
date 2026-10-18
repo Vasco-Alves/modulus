@@ -1,4 +1,5 @@
-// The built-in font. It needs a real texture (see opengl_test.hpp).
+// Fonts (the built-in one and TrueType ones) and reading UTF-8 text.
+// Most of these need a real texture, so an OpenGL context (see opengl_test.hpp).
 
 #include "opengl_test.hpp"
 
