@@ -30,6 +30,7 @@ namespace modulus::gfx {
 		void bind() const;
 		void unbind() const;
 
+		// Setting a uniform also binds this shader (OpenGL can only change the bound shader's uniforms)
 		void set_int(const std::string& name, int value);
 		void set_float3(const std::string& name, float x, float y, float z);
 		void set_float4(const std::string& name, float x, float y, float z, float w);

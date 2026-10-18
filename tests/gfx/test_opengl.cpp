@@ -193,6 +193,26 @@ TEST_F(OpenGLTest, DrawsATriangle) {
 	glDeleteFramebuffers(1, &framebuffer);
 }
 
+TEST_F(OpenGLTest, SettingAUniformChangesThatShader) {
+	// Uses u_Value, so the compiler can't optimize it away
+	const char* fragment_shader = R"(#version 330 core
+		uniform int u_Value;
+		layout(location = 0) out vec4 o_Color;
+		void main() { o_Color = vec4(float(u_Value)); })";
+
+	auto first = gfx::Shader::create(position_vertex_shader, fragment_shader);
+	auto second = gfx::Shader::create(position_vertex_shader, fragment_shader);
+	ASSERT_NE(first, nullptr);
+	ASSERT_NE(second, nullptr);
+
+	second->bind();
+	first->set_int("u_Value", 7); // While the other shader is bound
+
+	GLint value = 0;
+	glGetUniformiv(first->get_id(), glGetUniformLocation(first->get_id(), "u_Value"), &value);
+	EXPECT_EQ(value, 7);
+}
+
 TEST_F(OpenGLTest, ShaderCreateReturnsNullWhenCompilingFails) {
 	EXPECT_EQ(gfx::Shader::create("this is not GLSL", red_fragment_shader), nullptr);
 	EXPECT_EQ(gfx::Shader::create(position_vertex_shader, "neither is this"), nullptr);

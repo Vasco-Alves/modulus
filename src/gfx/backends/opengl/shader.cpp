@@ -80,25 +80,35 @@ namespace modulus::gfx {
 	}
 
 	// --- Uniforms (Now consistently using the cache) ---
+	// glUniform* changes the uniforms of whichever shader is bound,
+	// so each setter binds this shader first.
 
 	void Shader::set_int(const std::string& name, int value) {
 		int loc = get_cached_uniform_location(name);
-		if (loc != -1) glUniform1i(loc, value);
+		if (loc == -1) return;
+		bind();
+		glUniform1i(loc, value);
 	}
 
 	void Shader::set_float3(const std::string& name, float x, float y, float z) {
 		int loc = get_cached_uniform_location(name);
-		if (loc != -1) glUniform3f(loc, x, y, z);
+		if (loc == -1) return;
+		bind();
+		glUniform3f(loc, x, y, z);
 	}
 
 	void Shader::set_float4(const std::string& name, float x, float y, float z, float w) {
 		int loc = get_cached_uniform_location(name);
-		if (loc != -1) glUniform4f(loc, x, y, z, w);
+		if (loc == -1) return;
+		bind();
+		glUniform4f(loc, x, y, z, w);
 	}
 
 	void Shader::set_mat4(const std::string& name, const glm::mat4& value) {
 		int loc = get_cached_uniform_location(name);
-		if (loc != -1) glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
+		if (loc == -1) return;
+		bind();
+		glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 	}
 
 	int Shader::get_cached_uniform_location(const std::string& name) const {
