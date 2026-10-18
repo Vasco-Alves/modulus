@@ -8,8 +8,13 @@
 namespace modulus::gfx {
 
 	// The driver calls this when an OpenGL call goes wrong (debug builds only, see enable_debug_output)
-	static void APIENTRY on_opengl_message(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum severity,
+	static void APIENTRY on_opengl_message(GLenum /*source*/, GLenum type, GLuint id, GLenum severity,
 	                                       GLsizei /*length*/, const GLchar* message, const void* /*user_param*/) {
+		// NVIDIA's "shader is being recompiled based on GL state": a one-time cost, nothing to fix.
+		// (Message ids are chosen by each driver, so check the type too.)
+		if (type == GL_DEBUG_TYPE_PERFORMANCE && id == 131218)
+			return;
+
 		switch (severity) {
 		case GL_DEBUG_SEVERITY_HIGH:   MOD_ERROR("OpenGL: {}", message); break; // Errors like GL_INVALID_ENUM
 		case GL_DEBUG_SEVERITY_MEDIUM: MOD_WARN("OpenGL: {}", message);  break;
