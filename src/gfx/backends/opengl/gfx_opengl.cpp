@@ -23,6 +23,14 @@ namespace modulus::gfx {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		// Draw into the whole window, and keep doing that when the window is resized.
+		// (OpenGL doesn't do this by itself: without it, the old viewport size stays.)
+		auto [width, height] = window.get_framebuffer_size();
+		glViewport(0, 0, width, height);
+		window.set_framebuffer_resize_callback([](int new_width, int new_height) {
+			glViewport(0, 0, new_width, new_height);
+		});
+
 		return true;
 	}
 

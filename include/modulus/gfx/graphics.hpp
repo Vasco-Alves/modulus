@@ -11,11 +11,13 @@ namespace modulus::gfx {
 
 	// Starts the graphics module.
 	// Graphics draws into a window, so create the window first and pass it here.
+	// From then on, drawing covers the whole window, also after it is resized.
 	//
 	// There is no shutdown(): OpenGL is cleaned up when the window is destroyed.
 	bool init(platform::IWindow& window);
 
-	// Set the viewport (usually called when window resizes)
+	// Draw into part of the window only (x and y from the bottom-left corner, in pixels).
+	// Resizing the window resets it to the whole window.
 	void set_viewport(int x, int y, int width, int height);
 
 	void clear(const Color& color);

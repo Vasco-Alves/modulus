@@ -103,9 +103,10 @@ namespace modulus::platform {
 				glfwSetKeyCallback(m_handle, key_callback);
 			}
 
-			// Associate this class instance with the raw GLFW window
-			// (Useful if we need to access 'this' inside static callbacks later)
+			// Associate this class instance with the raw GLFW window,
+			// so static callbacks (like framebuffer_size_callback) can find it again
 			glfwSetWindowUserPointer(m_handle, this);
+			glfwSetFramebufferSizeCallback(m_handle, framebuffer_size_callback);
 
 			// GLFW creates the OpenGL context together with the window, so the window owns it.
 			// Making it "current" means OpenGL calls from now on draw into this window.
@@ -179,6 +180,12 @@ namespace modulus::platform {
 			return { w, h };
 		}
 
+		std::pair<int, int> get_framebuffer_size() const override {
+			int w, h;
+			glfwGetFramebufferSize(m_handle, &w, &h);
+			return { w, h };
+		}
+
 		void swap_buffers() override {
 			if (m_handle)
 				glfwSwapBuffers(m_handle);
@@ -189,12 +196,25 @@ namespace modulus::platform {
 			return (GLLoader)glfwGetProcAddress;
 		}
 
+		void set_framebuffer_resize_callback(FramebufferResizeCallback callback) override {
+			m_framebuffer_resize_callback = callback;
+		}
+
 		void* get_native_handle() const override {
 			return m_handle;
 		}
 
 	private:
+		// GLFW calls this when the drawing area changes size.
+		// It finds the GlfwWindow through the user pointer and passes the new size on.
+		static void framebuffer_size_callback(GLFWwindow* handle, int width, int height) {
+			auto* window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(handle));
+			if (window && window->m_framebuffer_resize_callback)
+				window->m_framebuffer_resize_callback(width, height);
+		}
+
 		GLFWwindow* m_handle = nullptr;
+		FramebufferResizeCallback m_framebuffer_resize_callback = nullptr;
 	};
 
 	// =========================================================================
