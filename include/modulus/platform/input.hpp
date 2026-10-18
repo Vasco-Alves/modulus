@@ -21,6 +21,12 @@ namespace modulus::platform {
 
 		// Letters
 		A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+
+		// Modifiers
+		LeftShift, RightShift, LeftControl, RightControl, LeftAlt, RightAlt,
+
+		// Editing and navigation
+		Insert, Delete, Home, End, PageUp, PageDown,
 	};
 
 	enum class MouseButton {
@@ -32,7 +38,8 @@ namespace modulus::platform {
 	struct Input {
 		static bool is_key_down(Key key);     // True every frame while the key is held (e.g. movement)
 		static bool is_key_pressed(Key key);  // True only in the frame the key went down (e.g. jump)
-		static bool is_mouse_down(MouseButton button);
+		static bool is_mouse_down(MouseButton button);    // True every frame while the button is held (e.g. dragging)
+		static bool is_mouse_pressed(MouseButton button); // True only in the frame the button went down (e.g. clicking)
 
 		static std::pair<float, float> get_mouse_position();
 		static float get_mouse_scroll(); // Returns scroll delta since last frame

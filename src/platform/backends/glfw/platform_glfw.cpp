@@ -27,11 +27,19 @@ namespace modulus::platform {
 			g_keys_pressed[key] = true;
 	}
 
+	static void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/) {
+		// Like key_callback: only record the moment a button goes down
+		if (action == GLFW_PRESS && button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST)
+			g_mouse_buttons_pressed[button] = true;
+	}
+
 	GLFWwindow* g_main_window_handle = nullptr;
 
 	float g_scroll_delta_y = 0.0f;
 
 	bool g_keys_pressed[GLFW_KEY_LAST + 1] = {};
+
+	bool g_mouse_buttons_pressed[GLFW_MOUSE_BUTTON_LAST + 1] = {};
 
 	// How many windows are open right now.
 	// GLFW starts when the first window opens and stops when the last one closes,
@@ -112,6 +120,7 @@ namespace modulus::platform {
 				g_main_window_handle = m_handle;
 				glfwSetScrollCallback(m_handle, scroll_callback);
 				glfwSetKeyCallback(m_handle, key_callback);
+				glfwSetMouseButtonCallback(m_handle, mouse_button_callback);
 			}
 
 			// Associate this class instance with the raw GLFW window,
@@ -151,10 +160,12 @@ namespace modulus::platform {
 			if (!m_handle)
 				return false;
 
-			// A new frame starts: forget the main window's scroll and key presses from last frame
+			// A new frame starts: forget the main window's scroll, key presses and clicks from last frame
 			if (m_handle == g_main_window_handle) {
 				g_scroll_delta_y = 0.0f;
 				for (bool& pressed : g_keys_pressed)
+					pressed = false;
+				for (bool& pressed : g_mouse_buttons_pressed)
 					pressed = false;
 			}
 

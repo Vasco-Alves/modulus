@@ -70,9 +70,33 @@ namespace modulus::platform {
 		case Key::Left: return GLFW_KEY_LEFT;
 		case Key::Right: return GLFW_KEY_RIGHT;
 
+		case Key::LeftShift: return GLFW_KEY_LEFT_SHIFT;
+		case Key::RightShift: return GLFW_KEY_RIGHT_SHIFT;
+		case Key::LeftControl: return GLFW_KEY_LEFT_CONTROL;
+		case Key::RightControl: return GLFW_KEY_RIGHT_CONTROL;
+		case Key::LeftAlt: return GLFW_KEY_LEFT_ALT;
+		case Key::RightAlt: return GLFW_KEY_RIGHT_ALT;
+
+		case Key::Insert: return GLFW_KEY_INSERT;
+		case Key::Delete: return GLFW_KEY_DELETE;
+		case Key::Home: return GLFW_KEY_HOME;
+		case Key::End: return GLFW_KEY_END;
+		case Key::PageUp: return GLFW_KEY_PAGE_UP;
+		case Key::PageDown: return GLFW_KEY_PAGE_DOWN;
+
 		case Key::Unknown:
 		default: return GLFW_KEY_UNKNOWN;
 		}
+	}
+
+	// Helper function to convert modulus::platform::MouseButton to GLFW button codes (-1 if unknown)
+	static int to_glfw_button(MouseButton button) {
+		switch (button) {
+		case MouseButton::Left:   return GLFW_MOUSE_BUTTON_LEFT;
+		case MouseButton::Right:  return GLFW_MOUSE_BUTTON_RIGHT;
+		case MouseButton::Middle: return GLFW_MOUSE_BUTTON_MIDDLE;
+		}
+		return -1;
 	}
 
 	bool Input::is_key_down(Key key) {
@@ -104,27 +128,25 @@ namespace modulus::platform {
 		if (!g_main_window_handle)
 			return false;
 
-		int glfw_button;
-		switch (button) {
-		case MouseButton::Left:
-			glfw_button = GLFW_MOUSE_BUTTON_LEFT;
-			break;
-
-		case MouseButton::Right:
-			glfw_button = GLFW_MOUSE_BUTTON_RIGHT;
-			break;
-
-		case MouseButton::Middle:
-			glfw_button = GLFW_MOUSE_BUTTON_MIDDLE;
-			break;
-
-		default:
+		int glfw_button = to_glfw_button(button);
+		if (glfw_button < 0)
 			return false;
-		}
 
 		// The actual GLFW call
 		int state = glfwGetMouseButton(g_main_window_handle, glfw_button);
 		return state == GLFW_PRESS;
+	}
+
+	bool Input::is_mouse_pressed(MouseButton button) {
+		if (!g_main_window_handle)
+			return false;
+
+		int glfw_button = to_glfw_button(button);
+		if (glfw_button < 0)
+			return false;
+
+		// Filled by the mouse button callback in platform_glfw.cpp
+		return g_mouse_buttons_pressed[glfw_button];
 	}
 
 	std::pair<float, float> Input::get_mouse_position() {

@@ -13,4 +13,7 @@ namespace modulus::platform {
 	// Which keys went down during the current frame (indexed by GLFW key code).
 	// Filled by the key callback, cleared at the start of every frame.
 	extern bool g_keys_pressed[GLFW_KEY_LAST + 1];
+
+	// The same for mouse buttons (indexed by GLFW button code)
+	extern bool g_mouse_buttons_pressed[GLFW_MOUSE_BUTTON_LAST + 1];
 }

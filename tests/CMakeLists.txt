@@ -34,14 +34,23 @@ add_executable(modulus_tests
     core/test_timer.cpp
 )
 
+if(MODULUS_BUILD_PLATFORM)
+    target_sources(modulus_tests PRIVATE
+        platform/test_input.cpp   # Opens a hidden window. Skips itself without a display.
+    )
+
+    # The platform tests talk to GLFW directly, to send the window fake input events
+    target_link_libraries(modulus_tests PRIVATE glfw)
+endif()
+
 if(MODULUS_BUILD_GFX)
     target_sources(modulus_tests PRIVATE
         gfx/test_buffer_layout.cpp
         gfx/test_opengl.cpp   # Opens a hidden window. Skips itself when OpenGL 3.3 isn't available.
     )
 
-    # The OpenGL tests check the GPU state directly, so they also use GLAD and GLFW
-    target_link_libraries(modulus_tests PRIVATE glad glfw)
+    # The OpenGL tests check the GPU state directly, so they also use GLAD
+    target_link_libraries(modulus_tests PRIVATE glad)
 endif()
 
 # ==============================================================================
