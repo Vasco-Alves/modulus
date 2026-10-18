@@ -111,6 +111,13 @@ namespace modulus::gfx {
 		glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 	}
 
+	void Shader::set_int_array(const std::string& name, const int* values, int count) {
+		int loc = get_cached_uniform_location(name);
+		if (loc == -1) return;
+		bind();
+		glUniform1iv(loc, count, values);
+	}
+
 	int Shader::get_cached_uniform_location(const std::string& name) const {
 		// A shader that didn't compile has no uniforms (and its error was already logged)
 		if (!is_valid())

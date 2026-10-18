@@ -35,6 +35,7 @@ namespace modulus::gfx {
 		void set_float3(const std::string& name, float x, float y, float z);
 		void set_float4(const std::string& name, float x, float y, float z, float w);
 		void set_mat4(const std::string& name, const glm::mat4& value);
+		void set_int_array(const std::string& name, const int* values, int count); // For example the slots of a sampler array
 
 		// Utility: Returns the raw ID
 		unsigned int get_id() const {

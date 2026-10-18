@@ -1,4 +1,5 @@
 #include "modulus/gfx/buffer.hpp"
+#include "modulus/core/log.hpp"
 
 #include <glad/glad.h>
 
@@ -6,7 +7,7 @@ namespace modulus::gfx {
 
 	// --- Vertex Buffer Implementation ---
 
-	VertexBuffer::VertexBuffer(const void* data, size_t size) {
+	VertexBuffer::VertexBuffer(const void* data, size_t size) : m_size(size) {
 		// 1. Generate a buffer ID
 		glGenBuffers(1, &m_renderer_id);
 
@@ -15,6 +16,24 @@ namespace modulus::gfx {
 
 		// 3. Upload the data to the GPU
 		glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+	}
+
+	VertexBuffer::VertexBuffer(size_t size) : m_size(size) {
+		glGenBuffers(1, &m_renderer_id);
+		glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id);
+
+		// No data yet (nullptr). GL_DYNAMIC_DRAW tells the driver that the data will change often.
+		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+	}
+
+	void VertexBuffer::set_data(const void* data, size_t size) {
+		if (size > m_size) {
+			MOD_ERROR("VertexBuffer::set_data: {} bytes don't fit in a buffer of {} bytes", size, m_size);
+			return;
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
 	}
 
 	VertexBuffer::~VertexBuffer() {

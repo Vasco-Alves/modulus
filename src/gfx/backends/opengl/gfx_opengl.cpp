@@ -87,10 +87,23 @@ namespace modulus::gfx {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
+	void draw_indexed(const VertexArray& vertex_array, unsigned int index_count) {
+		const auto& index_buffer = vertex_array.get_index_buffer();
+		if (!index_buffer) {
+			MOD_ERROR("draw_indexed: the vertex array has no index buffer");
+			return;
+		}
+
+		// 0 (or too many) means "all of them"
+		if (index_count == 0 || index_count > index_buffer->get_count())
+			index_count = index_buffer->get_count();
+
+		vertex_array.bind();
+		glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, nullptr);
+	}
+
 	void draw_indexed(const std::shared_ptr<VertexArray>& vertex_array) {
-		vertex_array->bind();
-		unsigned int count = vertex_array->get_index_buffer()->get_count();
-		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+		draw_indexed(*vertex_array);
 	}
 
 	void present(platform::IWindow& window) {

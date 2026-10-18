@@ -1,19 +1,17 @@
-// These tests need a real OpenGL 3.3 context, so each one opens a hidden window.
-// Where that isn't possible (no GPU or no display, like on many CI servers) they skip themselves.
+// Tests of the graphics module's building blocks, against a real OpenGL context (see opengl_test.hpp)
 
-#include <glad/glad.h> // Before GLFW, so GLFW doesn't include the system's OpenGL header
-#include <GLFW/glfw3.h>
-#include <gtest/gtest.h>
+#include "opengl_test.hpp"
 
-#include <modulus/gfx/graphics.hpp>
 #include <modulus/gfx/shader.hpp>
 #include <modulus/gfx/texture.hpp>
 #include <modulus/gfx/vertex_array.hpp>
-#include <modulus/platform/platform.hpp>
 
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <string>
+#include <vector>
 
 using namespace modulus;
 
@@ -28,40 +26,6 @@ namespace {
 	const char* red_fragment_shader = R"(#version 330 core
 		layout(location = 0) out vec4 o_Color;
 		void main() { o_Color = vec4(1.0, 0.0, 0.0, 1.0); })";
-
-	class OpenGLTest : public ::testing::Test {
-	protected:
-		void SetUp() override {
-			platform::WindowConfig config;
-			config.title = "modulus_tests";
-			config.width = 320;
-			config.height = 240;
-			config.visible = false;
-
-			window = platform::create_window(config);
-			if (!window || !gfx::init(*window))
-				GTEST_SKIP() << "No OpenGL 3.3 context available";
-		}
-
-		std::unique_ptr<platform::IWindow> window;
-
-		// Data for the buffers. The tests only check how buffers are set up, not what is in them.
-		float vertices[64] = {};
-		unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 };
-	};
-
-	GLint get_integer(GLenum name) {
-		GLint value = 0;
-		glGetIntegerv(name, &value);
-		return value;
-	}
-
-	// Reads a property of vertex attribute 'index' of the bound vertex array
-	GLint get_attribute(GLuint index, GLenum name) {
-		GLint value = 0;
-		glGetVertexAttribiv(index, name, &value);
-		return value;
-	}
 
 } // namespace
 
@@ -152,16 +116,8 @@ TEST_F(OpenGLTest, ViewportFollowsTheWindowSize) {
 
 TEST_F(OpenGLTest, DrawsATriangle) {
 	// Draw into an offscreen image (a framebuffer object): a hidden window may have no pixels to read back
-	const int size = 64;
-	GLuint framebuffer = 0, color_buffer = 0;
-	glGenFramebuffers(1, &framebuffer);
-	glGenRenderbuffers(1, &color_buffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, color_buffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, size, size);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, color_buffer);
-	ASSERT_EQ(glCheckFramebufferStatus(GL_FRAMEBUFFER), GLenum(GL_FRAMEBUFFER_COMPLETE));
-	gfx::set_viewport(0, 0, size, size);
+	OffscreenTarget target(64, 64);
+	ASSERT_TRUE(target.is_complete());
 
 	auto shader = gfx::Shader::create(position_vertex_shader, red_fragment_shader);
 	ASSERT_NE(shader, nullptr);
@@ -179,18 +135,8 @@ TEST_F(OpenGLTest, DrawsATriangle) {
 	shader->bind();
 	gfx::draw_indexed(mesh);
 
-	unsigned char center[4] = {}, corner[4] = {};
-	glReadPixels(size / 2, size / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, center);
-	glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, corner);
-
-	EXPECT_EQ(int(center[0]), 255); // The triangle is red...
-	EXPECT_EQ(int(center[2]), 0);
-	EXPECT_EQ(int(corner[0]), 0);   // ...and the corner keeps the blue background
-	EXPECT_EQ(int(corner[2]), 255);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glDeleteRenderbuffers(1, &color_buffer);
-	glDeleteFramebuffers(1, &framebuffer);
+	EXPECT_TRUE(has_color(target.pixel(32, 32), 255, 0, 0, 0)); // The triangle is red...
+	EXPECT_TRUE(has_color(target.pixel(0, 0), 0, 0, 255, 0));   // ...and the corner keeps the blue background
 }
 
 TEST_F(OpenGLTest, SettingAUniformChangesThatShader) {
@@ -275,4 +221,98 @@ TEST_F(OpenGLTest, TextureLoadsAnImage) {
 	EXPECT_EQ(texture->get_width(), 2);
 	EXPECT_EQ(texture->get_height(), 1);
 	EXPECT_NE(texture->get_renderer_id(), 0u);
+}
+
+TEST_F(OpenGLTest, VertexBufferSetDataReplacesTheContents) {
+	gfx::VertexBuffer buffer(4 * sizeof(float));
+	const float data[] = { 1.0f, 2.0f, 3.0f, 4.0f };
+	buffer.set_data(data, sizeof(data));
+
+	float stored[4] = {};
+	buffer.bind();
+	glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(stored), stored);
+	for (int i = 0; i < 4; ++i)
+		EXPECT_EQ(stored[i], data[i]);
+}
+
+TEST_F(OpenGLTest, VertexBufferSetDataRefusesTooMuchData) {
+	while (glGetError() != GL_NO_ERROR) {}
+	gfx::VertexBuffer buffer(8);
+	const float data[4] = {};
+
+	testing::internal::CaptureStderr();
+	buffer.set_data(data, sizeof(data)); // 16 bytes into 8
+	std::string errors = testing::internal::GetCapturedStderr();
+
+	EXPECT_NE(errors.find("don't fit"), std::string::npos) << errors;
+	EXPECT_EQ(glGetError(), GLenum(GL_NO_ERROR)); // OpenGL wasn't even asked
+}
+
+TEST_F(OpenGLTest, TexturesFromFilesAndFromPixelsAreStoredTheSameWay) {
+	// A 1x2 image: a red pixel on top of a blue one
+	std::filesystem::path path = std::filesystem::temp_directory_path() / "modulus_test_orientation.ppm";
+	{
+		std::ofstream out(path, std::ios::binary);
+		out << "P6\n1 2\n255\n";
+		const unsigned char rgb[] = { 255, 0, 0,   0, 0, 255 };
+		out.write(reinterpret_cast<const char*>(rgb), sizeof(rgb));
+	}
+	auto from_file = gfx::Texture2D::create(path.string());
+	std::filesystem::remove(path);
+
+	const uint8_t rgba[] = { 255, 0, 0, 255,   0, 0, 255, 255 }; // The same, top row first
+	auto from_pixels = gfx::Texture2D::create(1, 2, rgba);
+
+	ASSERT_NE(from_file, nullptr);
+	ASSERT_NE(from_pixels, nullptr);
+	EXPECT_EQ(from_pixels->get_width(), 1);
+	EXPECT_EQ(from_pixels->get_height(), 2);
+
+	auto stored = [](const gfx::Texture2D& texture) {
+		std::vector<uint8_t> pixels(8);
+		texture.bind();
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		return pixels;
+	};
+	EXPECT_EQ(stored(*from_pixels), stored(*from_file));
+
+	// OpenGL keeps the bottom row first: blue, then red
+	EXPECT_EQ(stored(*from_pixels), (std::vector<uint8_t>{ 0, 0, 255, 255,   255, 0, 0, 255 }));
+}
+
+TEST_F(OpenGLTest, TextureFromPixelsRejectsBadInput) {
+	const uint8_t white[] = { 255, 255, 255, 255 };
+	EXPECT_EQ(gfx::Texture2D::create(0, 1, white), nullptr);
+	EXPECT_EQ(gfx::Texture2D::create(1, 1, nullptr), nullptr);
+}
+
+TEST_F(OpenGLTest, SetIntArraySetsEveryElement) {
+	// Uses every element, so the compiler can't optimize them away
+	const char* fragment_shader = R"(#version 330 core
+		uniform int u_Values[3];
+		layout(location = 0) out vec4 o_Color;
+		void main() { o_Color = vec4(float(u_Values[0] + u_Values[1] + u_Values[2])); })";
+
+	auto shader = gfx::Shader::create(position_vertex_shader, fragment_shader);
+	ASSERT_NE(shader, nullptr);
+
+	const int values[] = { 4, 5, 6 };
+	shader->set_int_array("u_Values", values, 3);
+
+	for (int i = 0; i < 3; ++i) {
+		std::string name = "u_Values[" + std::to_string(i) + "]";
+		GLint value = 0;
+		glGetUniformiv(shader->get_id(), glGetUniformLocation(shader->get_id(), name.c_str()), &value);
+		EXPECT_EQ(value, values[i]) << name;
+	}
+}
+
+TEST_F(OpenGLTest, DrawIndexedWithoutAnIndexBufferLogsAnError) {
+	gfx::VertexArray vertex_array;
+
+	testing::internal::CaptureStderr();
+	gfx::draw_indexed(vertex_array); // Used to crash
+	std::string errors = testing::internal::GetCapturedStderr();
+
+	EXPECT_NE(errors.find("no index buffer"), std::string::npos) << errors;
 }

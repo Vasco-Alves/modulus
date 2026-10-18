@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <cstddef>
 
 namespace modulus::gfx {
 
@@ -12,6 +12,10 @@ namespace modulus::gfx {
 		// Create buffer and upload data immediately
 		// size: Size in bytes
 		VertexBuffer(const void* data, size_t size);
+
+		// Create an empty buffer of 'size' bytes, to fill (again and again) with set_data().
+		// For data that changes every frame, like the vertices of a batch of sprites.
+		explicit VertexBuffer(size_t size);
 		~VertexBuffer();
 
 		// Owns a GPU object, so copying is not allowed (both copies would delete it)
@@ -21,8 +25,12 @@ namespace modulus::gfx {
 		void bind() const;
 		void unbind() const;
 
+		// Replaces the start of the buffer with 'size' bytes of 'data' (at most the buffer's size)
+		void set_data(const void* data, size_t size);
+
 	private:
 		unsigned int m_renderer_id;
+		size_t m_size; // In bytes
 	};
 
 	// =========================================================================

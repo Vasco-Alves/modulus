@@ -22,6 +22,9 @@ namespace modulus::gfx {
 
 	void clear(const Color& color);
 
+	// Draws the triangles of a vertex array, using its index buffer.
+	// index_count: how many indices to use, from the start (0 = all of them)
+	void draw_indexed(const VertexArray& vertex_array, unsigned int index_count = 0);
 	void draw_indexed(const std::shared_ptr<VertexArray>& vertex_array);
 
 	// Shows the finished frame in the window. Call it once at the end of every frame.
