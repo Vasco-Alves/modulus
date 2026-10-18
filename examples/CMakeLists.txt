@@ -1,3 +1,7 @@
+# Each example copies the assets it uses next to it (see hello_window), and only those: the
+# examples are usually built into the same folder, and copying the same files from two examples
+# at once (as a parallel build does) can fail.
+
 # Always build the console example (it only needs Core)
 add_subdirectory(hello_console)
 
