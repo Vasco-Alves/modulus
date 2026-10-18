@@ -14,6 +14,7 @@
 #include <modulus/gfx/texture.hpp>
 
 #include <cstdint>
+#include <format>
 #include <vector>
 
 using namespace modulus;
@@ -85,6 +86,13 @@ int main() {
 		glm::vec2 cursor = camera.screen_to_world(mouse);
 		renderer->draw_quad(cursor - glm::vec2(8.0f, 8.0f), { 16.0f, 16.0f }, { 1.0f, 1.0f, 1.0f, 1.0f });
 
+		renderer->end();
+
+		// Text on top, drawn without the camera, so it stays in place when you zoom or drag the view
+		renderer->begin();
+		renderer->draw_text({ 40.0f, 670.0f },
+		                    std::format("Scroll: zoom ({:.1f}x)    Right mouse button: move the view", camera.zoom),
+		                    20.0f, { 0.8f, 0.8f, 0.85f, 1.0f });
 		renderer->end();
 		gfx::present(*window);
 	}

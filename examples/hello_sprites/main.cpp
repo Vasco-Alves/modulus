@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstdint>
 #include <format>
+#include <string>
 #include <vector>
 
 using namespace modulus;
@@ -166,7 +167,7 @@ int main() {
 
 			if (!coin.collected && glm::distance(coin.center, player) < 32.0f) {
 				coin.collected = true;
-				window->set_title(std::format("Modulus - Hello Sprites ({} of {} coins)", ++collected, coins.size()));
+				collected++;
 			}
 		}
 
@@ -187,6 +188,20 @@ int main() {
 		}
 
 		renderer->draw_sprite(player, { 40.0f, 40.0f }, tiles.get(Player), { .origin = { 0.5f, 0.5f }, .flip_x = facing_left });
+
+		// Text on top, each with a dark copy just behind it as a shadow
+		const gfx::Color shadow = { 0.0f, 0.0f, 0.0f, 0.6f };
+		const gfx::Color white = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		std::string score = std::format("Coins: {} of {}", collected, coins.size());
+		renderer->draw_text({ 22.0f, 22.0f }, score, 20.0f, shadow);
+		renderer->draw_text({ 20.0f, 20.0f }, score, 20.0f, white);
+
+		if (collected == int(coins.size())) {
+			const gfx::DrawOptions centered = { .origin = { 0.5f, 0.5f } };
+			renderer->draw_text({ 643.0f, 303.0f }, "You found them all!", 40.0f, shadow, centered);
+			renderer->draw_text({ 640.0f, 300.0f }, "You found them all!", 40.0f, white, centered);
+		}
 
 		renderer->end();
 		gfx::present(*window);

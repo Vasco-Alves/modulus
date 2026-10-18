@@ -121,6 +121,13 @@ renderer->draw_quad(center, { 64, 64 }, *texture, { .origin = { 0.5f, 0.5f }, .r
 renderer->draw_sprite(feet, { 32, 48 }, sprite, { .origin = { 0.5f, 1.0f }, .flip_x = facing_left });
 ```
 
+Text uses a built-in pixel font, so a score or some debug info needs no font file. Its lines are 10 pixels tall, so heights like 20 or 30 keep it sharp:
+
+```cpp
+renderer->draw_text({ 20, 20 }, "Score: 42", 20.0f, white);
+renderer->draw_text(center, "PAUSED", 40.0f, white, { .origin = { 0.5f, 0.5f } }); // Centered on 'center'
+```
+
 For sprite sheets and tile sets, cut a texture into cells and draw one at a time, or play a few of them as an animation:
 
 ```cpp
