@@ -63,9 +63,9 @@ endif()
 # ==============================================================================
 if(MODULUS_BUILD_GFX)
     # Did the parent project already provide GLM (for example with find_package(glm) through vcpkg)?
-    # Both that and the download below create a target named "glm::glm", which src/ links directly.
-    # (Renaming it with an alias here wouldn't work: an alias of a target that came from
-    # find_package() is only visible in this folder, not in src/.)
+    # Both that and the download below give a target named "glm::glm", which src/ links directly.
+    # (Renaming the parent's target with an alias here wouldn't work: an alias of a target that came
+    # from find_package() is only visible in this folder, not in src/.)
     if(TARGET glm::glm)
         message(STATUS "Modulus: Using existing GLM from parent project.")
     else()
@@ -75,11 +75,16 @@ if(MODULUS_BUILD_GFX)
             glm
             GIT_REPOSITORY https://github.com/g-truc/glm.git
             GIT_TAG        1.0.1
+            # GLM is header-only, so we only need its files, not its CMake project (whose old
+            # cmake_minimum_required makes new CMake versions warn). With a SOURCE_SUBDIR that has
+            # no CMakeLists.txt, FetchContent downloads the files but doesn't add the project.
+            SOURCE_SUBDIR  headers-only
         )
-
-        # GLM is header-only; don't compile it into a separate library.
-        set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
-
         FetchContent_MakeAvailable(glm)
+
+        # SYSTEM: warnings inside GLM's headers are GLM's business, not ours
+        add_library(modulus_glm INTERFACE)
+        target_include_directories(modulus_glm SYSTEM INTERFACE "${glm_SOURCE_DIR}")
+        add_library(glm::glm ALIAS modulus_glm)
     endif()
 endif()
