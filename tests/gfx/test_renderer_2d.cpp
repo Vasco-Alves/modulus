@@ -372,3 +372,29 @@ TEST_F(Renderer2DTest, TextBatchesWithEverythingElse) {
 	EXPECT_EQ(renderer->get_stats().quads, 9u);
 	EXPECT_EQ(renderer->get_stats().draw_calls, 1u);
 }
+
+TEST_F(Renderer2DTest, DrawsTextWithATrueTypeFont) {
+	auto lato = gfx::Font::load(MODULUS_TEST_FONT, 32.0f);
+	ASSERT_NE(lato, nullptr);
+
+	renderer->begin();
+	renderer->draw_text({ 10.0f, 10.0f }, "Hello", *lato, 32.0f, red);
+	renderer->end();
+
+	// Lots of red inside the box measure() gives, and only background outside it (give or take a pixel)
+	glm::vec2 size = lato->measure("Hello", 32.0f);
+	auto pixels = target->pixels(0, 0, 200, 80);
+	int red_inside = 0, drawn_outside = 0;
+	for (int y = 0; y < 80; ++y) {
+		for (int x = 0; x < 200; ++x) {
+			const auto& pixel = pixels[y][x];
+			bool inside = x >= 9 && x <= 11 + size.x && y >= 9 && y <= 11 + size.y;
+			if (inside && pixel[0] > 200 && pixel[2] < 60)
+				red_inside++;
+			if (!inside && !has_color(pixel, 0, 0, 255, 0))
+				drawn_outside++;
+		}
+	}
+	EXPECT_GT(red_inside, 200);
+	EXPECT_EQ(drawn_outside, 0);
+}

@@ -4,9 +4,10 @@
 
 #include <glm/glm.hpp>
 
-#include <array>
 #include <memory>
+#include <string>
 #include <string_view>
+#include <vector>
 
 namespace modulus::gfx {
 
@@ -27,6 +28,13 @@ namespace modulus::gfx {
 		// at heights that are multiples of 10. Returns nullptr if its texture can't be made.
 		static std::shared_ptr<Font> create_builtin();
 
+		// Loads a TrueType font file (.ttf) with its characters 'pixel_height' pixels tall (per line):
+		// ASCII, plus the accented letters of Western European languages (Latin-1, up to U+00FF).
+		// Text drawn at that same height looks sharpest. Returns nullptr if the file can't be loaded
+		// (the error is logged). Only load font files you trust: the library that reads them
+		// (stb_truetype) doesn't protect against deliberately broken ones.
+		static std::shared_ptr<Font> load(const std::string& path, float pixel_height);
+
 		// The glyph for a character ('?' for characters the font doesn't have)
 		const Glyph& get_glyph(char32_t character) const;
 
@@ -45,10 +53,8 @@ namespace modulus::gfx {
 	private:
 		Font() = default;
 
-		static constexpr char32_t first_character = ' ';  // The built-in font has these
-		static constexpr char32_t last_character = '~';   // ASCII characters, in order
-
-		std::array<Glyph, last_character - first_character + 1> m_glyphs = {};
+		std::vector<Glyph> m_glyphs;      // For the characters from m_first_character on, in order
+		char32_t m_first_character = ' ';
 		float m_line_height = 0.0f;
 	};
 

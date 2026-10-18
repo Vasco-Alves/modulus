@@ -13,6 +13,7 @@
 #include <array>
 #include <cstdlib>
 #include <memory>
+#include <vector>
 
 class OpenGLTest : public ::testing::Test {
 protected:
@@ -93,6 +94,22 @@ public:
 		unsigned char rgba[4] = {};
 		glReadPixels(x, m_height - 1 - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
 		return { rgba[0], rgba[1], rgba[2], rgba[3] };
+	}
+
+	// The colors of a whole block of pixels at once (much faster than pixel() for many of them).
+	// Use the result like this: result[y][x], with x and y from the block's top-left corner.
+	std::vector<std::vector<std::array<int, 4>>> pixels(int x, int y, int width, int height) const {
+		std::vector<unsigned char> rgba(size_t(width) * height * 4);
+		glReadPixels(x, m_height - y - height, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+
+		std::vector<std::vector<std::array<int, 4>>> result(height, std::vector<std::array<int, 4>>(width));
+		for (int row = 0; row < height; ++row) {
+			for (int column = 0; column < width; ++column) {
+				const unsigned char* p = &rgba[(size_t(height - 1 - row) * width + column) * 4]; // OpenGL's rows go up
+				result[row][column] = { p[0], p[1], p[2], p[3] };
+			}
+		}
+		return result;
 	}
 
 private:

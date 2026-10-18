@@ -72,11 +72,14 @@ target_link_libraries(modulus_tests PRIVATE
 )
 modulus_enable_warnings(modulus_tests)
 
+# The TrueType font the tests load (the same one the examples use)
+target_compile_definitions(modulus_tests PRIVATE MODULUS_TEST_FONT="${PROJECT_SOURCE_DIR}/assets/fonts/Lato-Regular.ttf")
+
 # ==============================================================================
 # 4. Registration (CTest)
 # ==============================================================================
 include(GoogleTest)
 
-# This magic command parses your C++ files and registers 
+# This magic command parses your C++ files and registers
 # every TEST() macro as a separate test in the IDE.
 gtest_discover_tests(modulus_tests)

@@ -63,6 +63,7 @@ if(MODULUS_BUILD_GFX)
         PUBLIC "${PROJECT_SOURCE_DIR}/include"
         PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
         PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../external/stb_image"
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../external/stb_truetype"
     )
 
     target_link_libraries(modulus_gfx

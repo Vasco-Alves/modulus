@@ -34,7 +34,7 @@ Instead of spending the start of every project gluing libraries together (window
 There is nothing to install by hand:
 
 - **GLFW** and **GLM** are downloaded automatically by CMake (FetchContent).
-- **GLAD**, **miniaudio** and **stb_image** are already included in `external/`.
+- **GLAD**, **miniaudio**, **stb_image** and **stb_truetype** are already included in `external/`.
 
 If your own project already provides GLFW or GLM (for example through vcpkg), Modulus uses those instead of downloading them. It looks for the `glfw` and `glm::glm` targets, so call `find_package` before `add_subdirectory(modulus)`.
 

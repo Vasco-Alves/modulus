@@ -5,7 +5,10 @@
 #include <modulus/gfx/font.hpp>
 
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -114,4 +117,54 @@ TEST(Utf8, BrokenTextGivesReplacementCharacters) {
 	index = 0;
 	EXPECT_EQ(gfx::Font::next_character(cut_short, index), char32_t(0xFFFD));
 	EXPECT_EQ(index, cut_short.size());
+}
+
+TEST_F(FontTest, LoadsATrueTypeFont) {
+	auto lato = gfx::Font::load(MODULUS_TEST_FONT, 32.0f);
+	ASSERT_NE(lato, nullptr);
+	EXPECT_FLOAT_EQ(lato->get_line_height(), 32.0f);
+
+	// Its characters have different widths: narrow letters take less room than wide ones
+	EXPECT_LT(lato->measure("iiii", 32.0f).x, lato->measure("WWWW", 32.0f).x);
+
+	// A capital letter is a bit more than half a line tall, and stands below the top of the line
+	const gfx::Font::Glyph& a = lato->get_glyph('A');
+	EXPECT_GT(a.size.y, 16.0f);
+	EXPECT_LT(a.size.y, 32.0f);
+	EXPECT_GT(a.offset.y, 0.0f);
+}
+
+TEST_F(FontTest, TrueTypeFontsHaveAccentedLetters) {
+	auto lato = gfx::Font::load(MODULUS_TEST_FONT, 32.0f);
+	ASSERT_NE(lato, nullptr);
+
+	auto same_glyph = [](const gfx::Font::Glyph& first, const gfx::Font::Glyph& second) {
+		return first.sprite.region.x == second.sprite.region.x && first.sprite.region.y == second.sprite.region.y;
+	};
+	const gfx::Font::Glyph& question_mark = lato->get_glyph('?');
+
+	EXPECT_FALSE(same_glyph(lato->get_glyph(0xE7), question_mark)); // c with a cedilla has its own glyph
+	EXPECT_FALSE(same_glyph(lato->get_glyph(0xE3), question_mark)); // So does a with a tilde
+	EXPECT_TRUE(same_glyph(lato->get_glyph(0x4E2D), question_mark)); // Chinese is beyond Latin-1
+	EXPECT_TRUE(same_glyph(lato->get_glyph(0x85), question_mark));   // An invisible control code
+}
+
+TEST_F(FontTest, LoadingAMissingOrBrokenFontFails) {
+	// A file that isn't a font
+	std::filesystem::path not_a_font = std::filesystem::temp_directory_path() / "modulus_test_not_a_font.ttf";
+	{
+		std::ofstream out(not_a_font, std::ios::binary);
+		out << "This is just some text, not a font. It is long enough to have a table of contents.";
+	}
+
+	testing::internal::CaptureStderr();
+	EXPECT_EQ(gfx::Font::load("this/font/does/not/exist.ttf", 32.0f), nullptr);
+	EXPECT_EQ(gfx::Font::load(not_a_font.string(), 32.0f), nullptr);
+	EXPECT_EQ(gfx::Font::load(MODULUS_TEST_FONT, 0.0f), nullptr);
+	std::string errors = testing::internal::GetCapturedStderr();
+	std::filesystem::remove(not_a_font);
+
+	EXPECT_NE(errors.find("Failed to open font"), std::string::npos) << errors;
+	EXPECT_NE(errors.find("Not a TrueType font"), std::string::npos) << errors;
+	EXPECT_NE(errors.find("pixel height must be above 0"), std::string::npos) << errors;
 }
