@@ -169,11 +169,35 @@ void main() {
 		add_quad(position, size, degrees, &texture, tint);
 	}
 
+	void Renderer2D::draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const Color& tint) {
+		draw_rotated_sprite(position, size, 0.0f, sprite, tint);
+	}
+
+	void Renderer2D::draw_rotated_sprite(glm::vec2 position, glm::vec2 size, float degrees, const Sprite& sprite, const Color& tint) {
+		if (!sprite.texture || !sprite.texture->is_valid())
+			return; // An empty sprite, for example from SpriteSheet::get() with a cell that doesn't exist
+
+		// The region is in pixels from the image's top-left, but texture coordinates go from 0 to 1,
+		// with the image's top at 1 (OpenGL stores images bottom row first)
+		float width = float(sprite.texture->get_width());
+		float height = float(sprite.texture->get_height());
+		const Rect& region = sprite.region;
+		glm::vec4 tex_coords = {
+			region.x / width,                           // Left
+			1.0f - region.y / height,                   // Top
+			(region.x + region.width) / width,          // Right
+			1.0f - (region.y + region.height) / height, // Bottom
+		};
+
+		add_quad(position, size, degrees, sprite.texture.get(), tint, tex_coords);
+	}
+
 	void Renderer2D::end() {
 		flush();
 	}
 
-	void Renderer2D::add_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D* texture, const Color& color) {
+	void Renderer2D::add_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D* texture, const Color& color,
+	                          glm::vec4 tex_coords) {
 		// The batch is full: draw it, and continue with an empty one
 		if (m_vertices.size() == max_quads_per_draw_call * 4)
 			flush();
@@ -207,12 +231,17 @@ void main() {
 			}
 		}
 
-		// The image's top-left is at texture coordinate (0, 1), because OpenGL stores images bottom row first
-		const glm::vec2 tex_coords[4] = { { 0.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f } };
+		// Each corner's texture coordinate, in the same order as the corners
+		const glm::vec2 corner_tex_coords[4] = {
+			{ tex_coords.x, tex_coords.y }, // Left, top
+			{ tex_coords.z, tex_coords.y }, // Right, top
+			{ tex_coords.z, tex_coords.w }, // Right, bottom
+			{ tex_coords.x, tex_coords.w }, // Left, bottom
+		};
 		glm::vec4 rgba = { color.r, color.g, color.b, color.a };
 
 		for (int i = 0; i < 4; ++i)
-			m_vertices.push_back({ corners[i], rgba, tex_coords[i], slot });
+			m_vertices.push_back({ corners[i], rgba, corner_tex_coords[i], slot });
 	}
 
 	int Renderer2D::find_texture_slot(const Texture2D* texture) {

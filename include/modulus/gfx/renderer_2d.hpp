@@ -2,6 +2,7 @@
 
 #include <modulus/gfx/camera_2d.hpp>
 #include <modulus/gfx/color.hpp>
+#include <modulus/gfx/sprite_sheet.hpp>
 #include <modulus/platform/window.hpp>
 
 #include <glm/glm.hpp>
@@ -54,6 +55,13 @@ namespace modulus::gfx {
 		void draw_rotated_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D& texture,
 		                       const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
+		// Draws a sprite: one part of a texture, like a cell of a SpriteSheet.
+		// An empty sprite (no texture) draws nothing.
+		void draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite,
+		                 const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
+		void draw_rotated_sprite(glm::vec2 position, glm::vec2 size, float degrees, const Sprite& sprite,
+		                         const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
+
 		// Draws everything collected since begin(). Textures must stay alive until then.
 		void end();
 
@@ -78,7 +86,11 @@ namespace modulus::gfx {
 			int texture_slot; // Which of the batch's textures to use
 		};
 
-		void add_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D* texture, const Color& color);
+		// tex_coords: the part of the texture to show, as (left, top, right, bottom) in OpenGL's 0 to 1
+		// texture coordinates. The default is the whole texture: its top is at 1, because OpenGL
+		// stores images bottom row first.
+		void add_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D* texture, const Color& color,
+		              glm::vec4 tex_coords = { 0.0f, 1.0f, 1.0f, 0.0f });
 		int find_texture_slot(const Texture2D* texture); // -1 if the batch has no free slot left
 		void flush(); // Draws the quads collected so far and starts an empty batch
 

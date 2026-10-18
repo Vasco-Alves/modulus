@@ -221,3 +221,44 @@ TEST_F(Renderer2DTest, NearestFilterKeepsPixelsSharp) {
 	EXPECT_TRUE(has_color(target->pixel(31, 4), 255, 0, 0, 0));
 	EXPECT_TRUE(has_color(target->pixel(32, 4), 0, 255, 0, 0));
 }
+
+TEST_F(Renderer2DTest, DrawsTheRightCellOfASpriteSheet) {
+	// A 4x4 texture made of four 2x2 cells, top row first: red, green, then yellow, white
+	const uint8_t R[] = { 255, 0, 0, 255 }, G[] = { 0, 255, 0, 255 }, Y[] = { 255, 255, 0, 255 }, W[] = { 255, 255, 255, 255 };
+	const uint8_t* rows[4][4] = {
+		{ R, R, G, G },
+		{ R, R, G, G },
+		{ Y, Y, W, W },
+		{ Y, Y, W, W },
+	};
+	std::vector<uint8_t> pixels;
+	for (auto& row : rows)
+		for (const uint8_t* pixel : row)
+			pixels.insert(pixels.end(), pixel, pixel + 4);
+
+	auto texture = gfx::Texture2D::create(4, 4, pixels.data());
+	ASSERT_NE(texture, nullptr);
+	texture->set_filter(gfx::TextureFilter::Nearest); // So the cells' edges don't blend with their neighbors
+	gfx::SpriteSheet sheet(texture, 2, 2);
+
+	renderer->begin();
+	renderer->draw_sprite({ 0.0f, 0.0f }, { 32.0f, 32.0f }, sheet.get(1, 0));  // Top-right cell: green
+	renderer->draw_sprite({ 40.0f, 0.0f }, { 32.0f, 32.0f }, sheet.get(0, 1)); // Bottom-left cell: yellow
+	renderer->end();
+
+	for (int y : { 1, 16, 30 }) {
+		for (int x : { 1, 16, 30 }) {
+			EXPECT_TRUE(has_color(target->pixel(x, y), 0, 255, 0, 0)) << "at " << x << ", " << y;
+			EXPECT_TRUE(has_color(target->pixel(40 + x, y), 255, 255, 0, 0)) << "at " << 40 + x << ", " << y;
+		}
+	}
+}
+
+TEST_F(Renderer2DTest, EmptySpritesDrawNothing) {
+	renderer->begin();
+	renderer->draw_sprite({ 0.0f, 0.0f }, { 32.0f, 32.0f }, gfx::Sprite{});
+	renderer->end();
+
+	EXPECT_EQ(renderer->get_stats().quads, 0u);
+	EXPECT_TRUE(has_color(target->pixel(16, 16), 0, 0, 255));
+}

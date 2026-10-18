@@ -25,6 +25,7 @@
 #include "modulus/gfx/graphics.hpp"
 #include "modulus/gfx/renderer_2d.hpp"
 #include "modulus/gfx/shader.hpp"
+#include "modulus/gfx/sprite_sheet.hpp"
 #include "modulus/gfx/texture.hpp"
 #include "modulus/gfx/vertex_array.hpp"
 #endif
