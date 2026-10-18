@@ -57,6 +57,7 @@ The programs are in `build/bin` (or `build/bin/Debug` with the Visual Studio gen
 ./build/bin/hello_console
 ./build/bin/hello_window
 ./build/bin/hello_2d
+./build/bin/hello_sprites
 ```
 
 ## Using Modulus in Your Project
@@ -109,6 +110,19 @@ while (window->update()) {
 ```
 
 Pass a `Camera2D` to `begin()` to scroll and zoom. [examples/hello_2d](examples/hello_2d/main.cpp) shows textures, rotation and a camera that follows the mouse.
+
+For sprite sheets and tile sets, cut a texture into cells and draw one at a time, or play a few of them as an animation:
+
+```cpp
+modulus::gfx::SpriteSheet sheet(texture, 16, 16);                      // Cells of 16x16 pixels
+renderer->draw_sprite({ 100, 100 }, { 64, 64 }, sheet.get(2, 1));      // Column 2, row 1
+
+modulus::gfx::SpriteAnimation walk(sheet, 0, 6, 10.0f);                // Cells 0 to 5, 10 per second
+walk.update(frame_seconds);
+renderer->draw_sprite(position, { 64, 64 }, walk.get_sprite());
+```
+
+[examples/hello_sprites](examples/hello_sprites/main.cpp) builds a tile map and animated coins this way.
 
 ### Build Options
 
