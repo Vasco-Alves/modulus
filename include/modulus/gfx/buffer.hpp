@@ -38,6 +38,7 @@ namespace modulus::gfx {
 		IndexBuffer(const IndexBuffer&) = delete;
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
 
+		// Careful: these change the index buffer of whichever VertexArray is bound at the time
 		void bind() const;
 		void unbind() const;
 

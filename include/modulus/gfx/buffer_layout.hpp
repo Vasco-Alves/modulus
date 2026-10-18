@@ -5,13 +5,16 @@
 
 namespace modulus::gfx {
 
+	// The type of one vertex attribute, as the shader sees it.
+	// (There is no Bool: GLSL doesn't allow bool vertex inputs. Use Int instead.)
 	enum class ShaderDataType {
-		None = 0, Float, Float2, Float3, Float4, Int, Int2, Int3, Int4, Bool
+		None = 0, Float, Float2, Float3, Float4, Int, Int2, Int3, Int4
 	};
 
 	// Helper to get size in bytes of a type
-	static unsigned int shader_data_type_size(ShaderDataType type) {
+	inline unsigned int shader_data_type_size(ShaderDataType type) {
 		switch (type) {
+		case ShaderDataType::None:     return 0;
 		case ShaderDataType::Float:    return 4;
 		case ShaderDataType::Float2:   return 4 * 2;
 		case ShaderDataType::Float3:   return 4 * 3;
@@ -20,7 +23,6 @@ namespace modulus::gfx {
 		case ShaderDataType::Int2:     return 4 * 2;
 		case ShaderDataType::Int3:     return 4 * 3;
 		case ShaderDataType::Int4:     return 4 * 4;
-		case ShaderDataType::Bool:     return 1;
 		}
 		return 0;
 	}
@@ -39,6 +41,7 @@ namespace modulus::gfx {
 		// Helper: How many components? (Float3 = 3)
 		unsigned int get_component_count() const {
 			switch (type) {
+			case ShaderDataType::None:    return 0;
 			case ShaderDataType::Float:   return 1;
 			case ShaderDataType::Float2:  return 2;
 			case ShaderDataType::Float3:  return 3;
@@ -47,7 +50,6 @@ namespace modulus::gfx {
 			case ShaderDataType::Int2:    return 2;
 			case ShaderDataType::Int3:    return 3;
 			case ShaderDataType::Int4:    return 4;
-			case ShaderDataType::Bool:    return 1;
 			}
 			return 0;
 		}

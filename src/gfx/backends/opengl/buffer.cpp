@@ -34,11 +34,13 @@ namespace modulus::gfx {
 	IndexBuffer::IndexBuffer(const unsigned int* indices, unsigned int count) : m_count(count) {
 		glGenBuffers(1, &m_renderer_id);
 
-		// Note: We use GL_ELEMENT_ARRAY_BUFFER for indices
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderer_id);
+		// Upload through GL_ARRAY_BUFFER, not GL_ELEMENT_ARRAY_BUFFER: the element array binding is part of
+		// whichever VAO is bound right now, so binding it here would replace that VAO's index buffer.
+		// (A buffer doesn't remember how it was filled, so it still works as an index buffer later.)
+		glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id);
 
 		// Calculate size: count * sizeof(unsigned int)
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, count * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 	}
 
 	IndexBuffer::~IndexBuffer() {
