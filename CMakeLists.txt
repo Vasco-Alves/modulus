@@ -27,6 +27,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# MSVC reads source files in the Windows code page unless told otherwise, which turns text like
+# "Olá" in a string literal into the wrong bytes. Read sources as UTF-8 and keep strings in UTF-8.
+# (This is for Modulus' own code. Your project needs /utf-8 too if its strings aren't plain ASCII.)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # Turns on compiler warnings for one of Modulus' own targets.
 # (Only for that target: not for the libraries Modulus uses, and not for your project.)
 function(modulus_enable_warnings target)
