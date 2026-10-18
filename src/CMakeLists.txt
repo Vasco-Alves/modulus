@@ -93,7 +93,7 @@ if(MODULUS_BUILD_AUDIO)
 
     target_link_libraries(modulus_audio
         PUBLIC modulus::core   # Needs logging
-        PRIVATE miniaudio      # The library we defined in external/CMakeLists.txt
+        PUBLIC miniaudio       # Public, so your code can include <miniaudio.h> for get_native_handle()
     )
     target_compile_definitions(modulus_audio PUBLIC MODULUS_HAS_AUDIO) # Lets modulus/modulus.hpp include it
     modulus_enable_warnings(modulus_audio)

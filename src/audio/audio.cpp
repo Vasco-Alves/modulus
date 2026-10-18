@@ -95,6 +95,10 @@ namespace modulus::audio {
 		ma_engine_set_volume(&m_engine->engine, volume);
 	}
 
+	ma_engine* Device::get_native_handle() const {
+		return &m_engine->engine;
+	}
+
 	// =========================================================================
 	// Sound
 	// =========================================================================
@@ -125,6 +129,10 @@ namespace modulus::audio {
 
 	void Sound::set_looping(bool looping) {
 		ma_sound_set_looping(&m_data->sound, looping ? MA_TRUE : MA_FALSE);
+	}
+
+	ma_sound* Sound::get_native_handle() const {
+		return &m_data->sound;
 	}
 
 } // namespace modulus::audio

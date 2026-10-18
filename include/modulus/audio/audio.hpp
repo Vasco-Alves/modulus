@@ -3,6 +3,11 @@
 #include <memory>
 #include <string>
 
+// miniaudio's own types, for get_native_handle(). Declared here, so this header doesn't need
+// miniaudio.h. Include <miniaudio.h> yourself to use them.
+struct ma_engine;
+struct ma_sound;
+
 namespace modulus::audio {
 
 	// Defined in audio.cpp, so miniaudio (the library that does the work) stays out of this header
@@ -27,6 +32,11 @@ namespace modulus::audio {
 
 		void set_volume(float volume);  // 0 = silent, 1 = as recorded
 		void set_looping(bool looping); // A looping sound starts over when it reaches the end
+
+		// The miniaudio sound underneath, for what Modulus doesn't wrap (pitch, panning, fades, a
+		// position in 3D, ...): include <miniaudio.h> and call miniaudio's ma_sound_* functions on it.
+		// Don't uninit it: the Sound does that.
+		ma_sound* get_native_handle() const;
 
 	private:
 		friend class Device;
@@ -56,6 +66,12 @@ namespace modulus::audio {
 		std::unique_ptr<Sound> load_sound(const std::string& path);
 
 		void set_volume(float volume); // Volume of everything: 0 = silent, 1 = normal
+
+		// The miniaudio engine underneath, for what Modulus doesn't wrap (the listener for 3D sound,
+		// sound groups, effects, ...): include <miniaudio.h> and call miniaudio's functions on it.
+		// Don't define MINIAUDIO_IMPLEMENTATION (Modulus already builds miniaudio), and don't uninit
+		// the engine: the Device and its Sounds do that.
+		ma_engine* get_native_handle() const;
 
 	private:
 		friend std::unique_ptr<Device> create_device();

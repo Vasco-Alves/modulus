@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <modulus/audio/audio.hpp>
+#include <miniaudio.h> // For the native handles. Modulus already builds miniaudio, so no MINIAUDIO_IMPLEMENTATION
 
 #include <chrono>
 #include <cstdint>
@@ -117,4 +118,25 @@ TEST_F(AudioTest, PlaySoundIsFireAndForget) {
 	device->play_sound(short_sound.string()); // A second copy on top of the first
 	device->play_sound("this/sound/does/not/exist.wav"); // Logs an error, nothing else
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+TEST_F(AudioTest, NativeHandlesWorkWithMiniaudio) {
+	ma_engine* engine = device->get_native_handle();
+	ASSERT_NE(engine, nullptr);
+	EXPECT_GT(ma_engine_get_sample_rate(engine), 0u);
+
+	auto sound = device->load_sound(long_sound.string());
+	ASSERT_NE(sound, nullptr);
+	ma_sound* native = sound->get_native_handle();
+	ASSERT_NE(native, nullptr);
+
+	// Something Modulus doesn't wrap, done with miniaudio directly
+	ma_sound_set_pitch(native, 1.5f);
+	EXPECT_FLOAT_EQ(ma_sound_get_pitch(native), 1.5f);
+
+	// Modulus and miniaudio work on the same sound
+	sound->set_volume(0.25f);
+	EXPECT_FLOAT_EQ(ma_sound_get_volume(native), 0.25f);
+	ma_sound_start(native);
+	EXPECT_TRUE(sound->is_playing());
 }

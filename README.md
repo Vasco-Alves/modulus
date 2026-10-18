@@ -151,6 +151,28 @@ renderer->draw_sprite(position, { 64, 64 }, walk.get_sprite());
 
 [examples/hello_sprites](examples/hello_sprites/main.cpp) builds a tile map and animated coins this way.
 
+### Playing Sounds
+
+```cpp
+auto audio = modulus::audio::create_device();   // nullptr if there's no audio device
+audio->play_sound(modulus::core::File::app_path("assets/coin.wav"));   // Fire and forget
+
+auto music = audio->load_sound(modulus::core::File::app_path("assets/music.mp3"));   // A sound you control
+music->set_looping(true);
+music->play();
+```
+
+Audio plays while `audio` exists, and everything is cleaned up automatically (a sound may even outlive its device).
+
+The audio module is built on [miniaudio](https://miniaud.io). For what it doesn't wrap, like pitch, panning, 3D sound or effects, use miniaudio itself on the same engine and sounds:
+
+```cpp
+#include <miniaudio.h> // Modulus already builds miniaudio, so don't define MINIAUDIO_IMPLEMENTATION
+
+ma_sound_set_pitch(music->get_native_handle(), 1.5f);
+ma_engine_listener_set_position(audio->get_native_handle(), 0, 0.0f, 0.0f, 0.0f);
+```
+
 ### Build Options
 
 | Option                   | Default                                       | Description                       |

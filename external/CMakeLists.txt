@@ -50,7 +50,8 @@ if(MODULUS_BUILD_AUDIO)
             message(STATUS "Modulus: Found miniaudio")
             
             add_library(miniaudio INTERFACE)
-            target_include_directories(miniaudio INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/miniaudio")
+            # SYSTEM: warnings inside miniaudio are miniaudio's business, not yours or ours
+            target_include_directories(miniaudio SYSTEM INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/miniaudio")
             
         else()
             message(WARNING "Modulus: miniaudio.h not found!")
