@@ -13,6 +13,10 @@ endif()
 # The 2D examples need Platform and Gfx
 if(MODULUS_BUILD_PLATFORM AND MODULUS_BUILD_GFX)
     add_subdirectory(hello_2d)
-    add_subdirectory(hello_sprites)
     add_subdirectory(hello_text)
+
+    # This one plays a sound too
+    if(MODULUS_BUILD_AUDIO)
+        add_subdirectory(hello_sprites)
+    endif()
 endif()

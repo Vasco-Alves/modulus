@@ -1,4 +1,4 @@
-// Hello Sprites: a little pixel-art game with sprite sheets and animations.
+// Hello Sprites: a little pixel-art game with sprite sheets, animations and a sound.
 //   Walk with the arrow keys or WASD and collect the spinning coins.
 //   Resize the window: the game stays sharp, scaled by whole numbers.
 //   Escape: quit.
@@ -8,6 +8,9 @@
 // The sprite sheets are drawn in code, so this example needs no image files.
 // A real game would load them from PNG files instead:
 //   auto tile_set = gfx::Texture2D::create(core::File::app_path("assets/tiles.png"));
+// The coin sound is a file, though: assets/sounds/coin.wav, copied next to the program by CMake.
+
+#include <modulus/core/file.hpp>
 
 #include <modulus/platform/input.hpp>
 #include <modulus/platform/platform.hpp>
@@ -17,10 +20,13 @@
 #include <modulus/gfx/renderer_2d.hpp>
 #include <modulus/gfx/sprite_sheet.hpp>
 
+#include <modulus/audio/audio.hpp>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <format>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -143,6 +149,12 @@ int main() {
 		coins.push_back(coin);
 	}
 
+	// The sound of collecting a coin. Without an audio device the game still runs, just silently.
+	auto audio_device = audio::create_device();
+	std::unique_ptr<audio::Sound> coin_sound;
+	if (audio_device)
+		coin_sound = audio_device->load_sound(core::File::app_path("assets/sounds/coin.wav"));
+
 	glm::vec2 player = { 160.0f, 90.0f };
 	bool facing_left = false;
 	int collected = 0;
@@ -176,6 +188,8 @@ int main() {
 			if (!coin.collected && glm::distance(coin.center, player) < 8.0f) {
 				coin.collected = true;
 				collected++;
+				if (coin_sound)
+					coin_sound->play();
 			}
 		}
 

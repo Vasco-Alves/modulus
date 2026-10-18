@@ -166,13 +166,13 @@ renderer->draw_quad(fit.position, fit.size, game_screen->get_texture());
 renderer->end();
 ```
 
-[examples/hello_sprites](examples/hello_sprites/main.cpp) is a little game made this way, with a tile map and animated coins.
+[examples/hello_sprites](examples/hello_sprites/main.cpp) is a little game made this way, with a tile map, animated coins, and a sound when you collect one.
 
 ### Playing Sounds
 
 ```cpp
 auto audio = modulus::audio::create_device();   // nullptr if there's no audio device
-audio->play_sound(modulus::core::File::app_path("assets/coin.wav"));   // Fire and forget
+audio->play_sound(modulus::core::File::app_path("assets/sounds/coin.wav"));   // Fire and forget
 
 auto music = audio->load_sound(modulus::core::File::app_path("assets/music.mp3"));   // A sound you control
 music->set_looping(true);
@@ -207,4 +207,4 @@ Core is always built.
 
 MIT. See [LICENSE.txt](LICENSE.txt).
 
-The libraries in `external/` keep their own licenses (in their files). The font in `assets/fonts` is Lato by Łukasz Dziedzic, under the SIL Open Font License: see [assets/fonts/OFL.txt](assets/fonts/OFL.txt).
+The libraries in `external/` keep their own licenses (in their files). The font in `assets/fonts` is Lato by Łukasz Dziedzic, under the SIL Open Font License: see [assets/fonts/OFL.txt](assets/fonts/OFL.txt). The coin sound in `assets/sounds` was made for Modulus, and is MIT like the rest.
