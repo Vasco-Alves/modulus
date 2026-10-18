@@ -151,7 +151,22 @@ walk.update(frame_seconds);
 renderer->draw_sprite(position, { 64, 64 }, walk.get_sprite());
 ```
 
-[examples/hello_sprites](examples/hello_sprites/main.cpp) builds a tile map and animated coins this way.
+For a pixel-art game, draw it at a low resolution into a `RenderTarget`, then show that scaled up by a whole number. Every game pixel then stays a sharp square, at any window size:
+
+```cpp
+auto game_screen = modulus::gfx::RenderTarget::create(320, 180);
+
+renderer->begin(*game_screen);   // Draw the game at 320x180 (one unit is one game pixel)
+// ...
+renderer->end();
+
+renderer->begin();               // Then show it in the window, centered, with bars around it if needed
+auto fit = modulus::gfx::fit_pixel_perfect({ 320, 180 }, window_size);
+renderer->draw_quad(fit.position, fit.size, game_screen->get_texture());
+renderer->end();
+```
+
+[examples/hello_sprites](examples/hello_sprites/main.cpp) is a little game made this way, with a tile map and animated coins.
 
 ### Playing Sounds
 

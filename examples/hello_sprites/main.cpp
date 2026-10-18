@@ -1,6 +1,9 @@
-// Hello Sprites: sprite sheets and animations.
+// Hello Sprites: a little pixel-art game with sprite sheets and animations.
 //   Walk with the arrow keys or WASD and collect the spinning coins.
+//   Resize the window: the game stays sharp, scaled by whole numbers.
 //   Escape: quit.
+//
+// The game is drawn at 320x180 pixels into a render target, then shown scaled up in the window.
 //
 // The sprite sheets are drawn in code, so this example needs no image files.
 // A real game would load them from PNG files instead:
@@ -12,6 +15,7 @@
 #include <modulus/platform/platform.hpp>
 
 #include <modulus/gfx/graphics.hpp>
+#include <modulus/gfx/render_target.hpp>
 #include <modulus/gfx/renderer_2d.hpp>
 #include <modulus/gfx/sprite_sheet.hpp>
 
@@ -72,19 +76,19 @@ static std::shared_ptr<gfx::Texture2D> make_tile_set() {
 	return image.to_texture();
 }
 
-// The coin animation: 6 cells of 16x16 pixels. The coin turns, so it looks thinner, then wider again.
+// The coin animation: 6 cells of 10x10 pixels. The coin turns, so it looks thinner, then wider again.
 static std::shared_ptr<gfx::Texture2D> make_coin_sheet() {
-	Image image(6 * 16, 16);
+	Image image(6 * 10, 10);
 	for (int frame = 0; frame < 6; ++frame) {
-		float half_width = std::max(1.0f, 6.5f * std::abs(std::cos(frame * 3.14159f / 6.0f)));
-		for (int y = 0; y < 16; ++y) {
-			for (int x = 0; x < 16; ++x) {
-				float dx = (x + 0.5f - 8.0f) / half_width;
-				float dy = (y + 0.5f - 8.0f) / 6.5f;
+		float half_width = std::max(1.0f, 4.5f * std::abs(std::cos(frame * 3.14159f / 6.0f)));
+		for (int y = 0; y < 10; ++y) {
+			for (int x = 0; x < 10; ++x) {
+				float dx = (x + 0.5f - 5.0f) / half_width;
+				float dy = (y + 0.5f - 5.0f) / 4.5f;
 				float distance = dx * dx + dy * dy; // Below 1: inside the coin
 				if (distance <= 1.0f) {
 					bool rim = distance > 0.55f;
-					image.set(frame * 16 + x, y, rim ? 205 : 255, rim ? 150 : 205, 40);
+					image.set(frame * 10 + x, y, rim ? 205 : 255, rim ? 150 : 205, 40);
 				}
 			}
 		}
@@ -116,11 +120,18 @@ int main() {
 	if (!renderer)
 		return -1;
 
-	gfx::SpriteSheet tiles(make_tile_set(), 8, 8);
-	gfx::SpriteSheet coin_sheet(make_coin_sheet(), 16, 16);
+	// The game is drawn into this 320x180 image, in which one unit is one pixel.
+	// It's then shown scaled up in the window: 4 times at the window's starting size of 1280x720.
+	const glm::vec2 game_size = { 320.0f, 180.0f };
+	auto game_screen = gfx::RenderTarget::create(int(game_size.x), int(game_size.y));
+	if (!game_screen)
+		return -1;
 
-	const float tile_size = 32.0f; // The 8x8 tiles are drawn 4 times as big
-	const int columns = 40, rows = 23;  // Enough to fill the 1280x720 window
+	gfx::SpriteSheet tiles(make_tile_set(), 8, 8);
+	gfx::SpriteSheet coin_sheet(make_coin_sheet(), 10, 10);
+
+	const float tile_size = 8.0f;
+	const int columns = 40, rows = 23; // Enough tiles to fill the game screen
 
 	struct Coin {
 		glm::vec2 center;
@@ -129,12 +140,12 @@ int main() {
 	};
 	std::vector<Coin> coins;
 	for (int i = 0; i < 12; ++i) {
-		Coin coin = { { 220.0f + (i % 6) * 170.0f, 200.0f + (i / 6) * 300.0f }, gfx::SpriteAnimation(coin_sheet, 0, 6, 10.0f) };
+		Coin coin = { { 55.0f + (i % 6) * 42.0f, 50.0f + (i / 6) * 75.0f }, gfx::SpriteAnimation(coin_sheet, 0, 6, 10.0f) };
 		coin.animation.update(i * 0.05f); // So the coins don't all turn in step
 		coins.push_back(coin);
 	}
 
-	glm::vec2 player = { 640.0f, 360.0f };
+	glm::vec2 player = { 160.0f, 90.0f };
 	bool facing_left = false;
 	int collected = 0;
 	core::Timer frame_timer;
@@ -154,7 +165,7 @@ int main() {
 		if (Input::is_key_down(Key::Up) || Input::is_key_down(Key::W)) direction.y -= 1.0f;
 		if (Input::is_key_down(Key::Down) || Input::is_key_down(Key::S)) direction.y += 1.0f;
 		if (direction.x != 0.0f || direction.y != 0.0f)
-			player += glm::normalize(direction) * 250.0f * seconds;
+			player += glm::normalize(direction) * 60.0f * seconds; // Game pixels per second
 
 		// Face the way we last walked (the sprite looks right, so flip it to look left)
 		if (direction.x < 0.0f)
@@ -165,14 +176,14 @@ int main() {
 		for (Coin& coin : coins) {
 			coin.animation.update(seconds);
 
-			if (!coin.collected && glm::distance(coin.center, player) < 32.0f) {
+			if (!coin.collected && glm::distance(coin.center, player) < 8.0f) {
 				coin.collected = true;
 				collected++;
 			}
 		}
 
-		gfx::clear({ 0.0f, 0.0f, 0.0f, 1.0f });
-		renderer->begin();
+		// Draw the game into the game screen, everything at its own size in pixels
+		renderer->begin(*game_screen);
 
 		for (int y = 0; y < rows; ++y) {
 			for (int x = 0; x < columns; ++x) {
@@ -184,26 +195,38 @@ int main() {
 		// The coins and the player are placed by their center
 		for (const Coin& coin : coins) {
 			if (!coin.collected)
-				renderer->draw_sprite(coin.center, { 32.0f, 32.0f }, coin.animation.get_sprite(), { .origin = { 0.5f, 0.5f } });
+				renderer->draw_sprite(coin.center, { 10.0f, 10.0f }, coin.animation.get_sprite(), { .origin = { 0.5f, 0.5f } });
 		}
 
-		renderer->draw_sprite(player, { 40.0f, 40.0f }, tiles.get(Player), { .origin = { 0.5f, 0.5f }, .flip_x = facing_left });
+		renderer->draw_sprite(player, { 8.0f, 8.0f }, tiles.get(Player), { .origin = { 0.5f, 0.5f }, .flip_x = facing_left });
 
-		// Text on top, each with a dark copy just behind it as a shadow
+		// Text on top, each with a dark copy just behind it as a shadow. The built-in font's
+		// lines are 10 pixels tall, so at 10 every letter pixel is one game pixel.
 		const gfx::Color shadow = { 0.0f, 0.0f, 0.0f, 0.6f };
 		const gfx::Color white = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		std::string score = std::format("Coins: {} of {}", collected, coins.size());
-		renderer->draw_text({ 22.0f, 22.0f }, score, 20.0f, shadow);
-		renderer->draw_text({ 20.0f, 20.0f }, score, 20.0f, white);
+		renderer->draw_text({ 5.0f, 5.0f }, score, 10.0f, shadow);
+		renderer->draw_text({ 4.0f, 4.0f }, score, 10.0f, white);
 
 		if (collected == int(coins.size())) {
 			const gfx::DrawOptions centered = { .origin = { 0.5f, 0.5f } };
-			renderer->draw_text({ 643.0f, 303.0f }, "You found them all!", 40.0f, shadow, centered);
-			renderer->draw_text({ 640.0f, 300.0f }, "You found them all!", 40.0f, white, centered);
+			renderer->draw_text({ 162.0f, 82.0f }, "You found them all!", 20.0f, shadow, centered);
+			renderer->draw_text({ 160.0f, 80.0f }, "You found them all!", 20.0f, white, centered);
 		}
 
 		renderer->end();
+
+		// Show the game screen in the window, as big as whole-number scaling allows, with black
+		// bars around it if the window's shape doesn't match
+		gfx::clear({ 0.0f, 0.0f, 0.0f, 1.0f });
+		auto [window_width, window_height] = window->get_size();
+		gfx::PixelPerfectFit fit = gfx::fit_pixel_perfect(game_size, { float(window_width), float(window_height) });
+
+		renderer->begin();
+		renderer->draw_quad(fit.position, fit.size, game_screen->get_texture());
+		renderer->end();
+
 		gfx::present(*window);
 	}
 
