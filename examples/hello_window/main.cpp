@@ -80,8 +80,9 @@ int main() {
 	// 5. Start Audio
 	// =========================================================================
 
-	// Started last, so the "return -1" lines above never have to stop it
-	if (!modulus::audio::init())
+	// Audio plays while 'audio' exists, like the platform runs while the window exists
+	auto audio = modulus::audio::create_device();
+	if (!audio)
 		return -1;
 
 	std::string sound_path = modulus::core::File::app_path("assets/test.mp3");
@@ -96,7 +97,7 @@ int main() {
 
 		// "pressed", not "down": play once per press, not every frame while held
 		if (modulus::platform::Input::is_key_pressed(modulus::platform::Key::Space)) {
-			modulus::audio::play_sound(sound_path);
+			audio->play_sound(sound_path);
 		}
 
 		// 1. Clear Screen
@@ -114,7 +115,7 @@ int main() {
 	}
 
 	// 7. Cleanup
-	// Audio is stopped by hand. Everything else (graphics objects, the window and the platform) is cleaned up automatically when main() ends.
-	modulus::audio::shutdown();
+	// Nothing to do: audio, the graphics objects, the window and the platform
+	// are all cleaned up automatically when main() ends.
 	return 0;
 }

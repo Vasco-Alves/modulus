@@ -53,6 +53,12 @@ if(MODULUS_BUILD_GFX)
     target_link_libraries(modulus_tests PRIVATE glad)
 endif()
 
+if(MODULUS_BUILD_AUDIO)
+    target_sources(modulus_tests PRIVATE
+        audio/test_audio.cpp   # Opens the default audio device (and only plays silence). Skips itself without one.
+    )
+endif()
+
 # ==============================================================================
 # 3. Linking
 # ==============================================================================
