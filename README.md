@@ -1,5 +1,7 @@
 # Modulus Framework
 
+[![CI](https://github.com/Vasco-Alves/modulus/actions/workflows/ci.yml/badge.svg)](https://github.com/Vasco-Alves/modulus/actions/workflows/ci.yml)
+
 **Modulus** is a modular C++20 framework that wraps well-known open-source libraries behind one simple, consistent API.
 
 Instead of spending the start of every project gluing libraries together (windows, graphics, audio, ...), you link the Modulus modules you need and start writing your app.
@@ -182,6 +184,7 @@ ma_engine_listener_set_position(audio->get_native_handle(), 0, 0.0f, 0.0f, 0.0f)
 | `MODULUS_BUILD_AUDIO`    | `ON`                                          | Audio                             |
 | `MODULUS_BUILD_EXAMPLES` | `ON` on its own, `OFF` inside another project | Example programs                  |
 | `MODULUS_BUILD_TESTS`    | `OFF`                                         | Unit tests (downloads GoogleTest) |
+| `MODULUS_WARNINGS_AS_ERRORS` | `OFF`                                     | Stop on any warning in Modulus' code (CI uses this) |
 
 Core is always built.
 

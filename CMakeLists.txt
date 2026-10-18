@@ -36,11 +36,18 @@ endif()
 
 # Turns on compiler warnings for one of Modulus' own targets.
 # (Only for that target: not for the libraries Modulus uses, and not for your project.)
+# With MODULUS_WARNINGS_AS_ERRORS, a warning stops the build, which keeps the code free of them.
 function(modulus_enable_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
+        if(MODULUS_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE /WX)
+        endif()
     else()
         target_compile_options(${target} PRIVATE -Wall -Wextra)
+        if(MODULUS_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE -Werror)
+        endif()
     endif()
 endfunction()
 
@@ -69,6 +76,7 @@ option(MODULUS_BUILD_AUDIO    "Build the Audio module"    ON)
 # If submodule (inside Engine), default Examples to OFF to save build time.
 option(MODULUS_BUILD_EXAMPLES "Build the example applications" ${MODULUS_IS_TOP_LEVEL})
 option(MODULUS_BUILD_TESTS    "Build unit tests"               OFF)
+option(MODULUS_WARNINGS_AS_ERRORS "Stop the build on any warning in Modulus' own code (CI turns this on)" OFF)
 
 # Graphics draws into a platform window, so it can't be built without Platform
 if(MODULUS_BUILD_GFX AND NOT MODULUS_BUILD_PLATFORM)

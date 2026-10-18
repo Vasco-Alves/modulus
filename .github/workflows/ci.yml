@@ -1,0 +1,70 @@
+# Builds Modulus and runs its tests on Windows and Linux, for every push to main and every pull request.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # Lets you start a run by hand, from the Actions tab
+
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request cancels the run that is still going
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows (MSVC, ${{ matrix.config }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The default generator on Windows is Visual Studio, which finds MSVC by itself.
+      # These machines have no GPU, so the OpenGL tests skip themselves here.
+      - name: Configure
+        run: cmake -S . -B build -DMODULUS_BUILD_TESTS=ON -DMODULUS_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.config }} --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.config }} --output-on-failure
+
+  linux:
+    name: Linux (GCC, ${{ matrix.config }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # GLFW needs X11's development files and OpenGL needs libGL. Xvfb is a display that exists
+      # only in memory, and Mesa draws into it in software, so the OpenGL tests can run here too.
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorg-dev libgl-dev xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils
+
+      - name: Show the OpenGL driver
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" glxinfo -B
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DMODULUS_BUILD_TESTS=ON -DMODULUS_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" ctest --test-dir build --output-on-failure
