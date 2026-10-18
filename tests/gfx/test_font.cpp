@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 using namespace modulus;
@@ -89,4 +90,28 @@ TEST_F(FontTest, EveryCharacterHasPixelsInsideItsCell) {
 		else
 			EXPECT_GT(inside, 0) << "character " << int(character) << " has no pixels";
 	}
+}
+
+TEST(Utf8, ReadsCharactersOfEveryLength) {
+	// 'a' (1 byte), an accented e (2 bytes), the euro sign (3), and an emoji (4)
+	std::string_view text = "a\xC3\xA9\xE2\x82\xAC\xF0\x9F\x98\x80";
+	size_t index = 0;
+
+	EXPECT_EQ(gfx::Font::next_character(text, index), char32_t('a'));
+	EXPECT_EQ(gfx::Font::next_character(text, index), char32_t(0xE9));
+	EXPECT_EQ(gfx::Font::next_character(text, index), char32_t(0x20AC));
+	EXPECT_EQ(gfx::Font::next_character(text, index), char32_t(0x1F600));
+	EXPECT_EQ(index, text.size());
+}
+
+TEST(Utf8, BrokenTextGivesReplacementCharacters) {
+	std::string_view stray_continuation = "\x80" "a"; // A byte that only continues a character
+	size_t index = 0;
+	EXPECT_EQ(gfx::Font::next_character(stray_continuation, index), char32_t(0xFFFD));
+	EXPECT_EQ(gfx::Font::next_character(stray_continuation, index), char32_t('a')); // Then it carries on
+
+	std::string_view cut_short = "\xC3"; // The start of a 2-byte character, and then nothing
+	index = 0;
+	EXPECT_EQ(gfx::Font::next_character(cut_short, index), char32_t(0xFFFD));
+	EXPECT_EQ(index, cut_short.size());
 }

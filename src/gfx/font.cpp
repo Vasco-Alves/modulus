@@ -167,18 +167,38 @@ namespace modulus::gfx {
 		float widest = 0.0f;
 		int lines = 1;
 
-		for (unsigned char c : text) {
-			if (c == '\n') {
+		for (size_t index = 0; index < text.size();) {
+			char32_t character = next_character(text, index);
+			if (character == '\n') {
 				widest = std::max(widest, line_width);
 				line_width = 0.0f;
 				++lines;
-			} else if ((c & 0xC0) != 0x80) { // Skip the rest of a multi-byte UTF-8 character: it shows as one glyph
-				line_width += get_glyph(c).advance * scale;
+			} else {
+				line_width += get_glyph(character).advance * scale;
 			}
 		}
 
 		widest = std::max(widest, line_width);
 		return { widest, lines * height };
+	}
+
+	char32_t Font::next_character(std::string_view text, size_t& index) {
+		const char32_t replacement = 0xFFFD;
+		unsigned char first = (unsigned char)text[index++];
+
+		// The first byte says how many more belong to this character:
+		// 0xxxxxxx: none (ASCII), 110xxxxx: 1, 1110xxxx: 2, 11110xxx: 3. 10xxxxxx only continues one.
+		int more = first < 0x80 ? 0 : first >= 0xF0 ? 3 : first >= 0xE0 ? 2 : first >= 0xC0 ? 1 : -1;
+		if (more < 0)
+			return replacement; // A continuation byte where a character should start
+
+		char32_t character = first & (0x7F >> more); // The bits of the first byte that belong to the character
+		for (int i = 0; i < more; ++i) {
+			if (index >= text.size() || ((unsigned char)text[index] & 0xC0) != 0x80)
+				return replacement; // Cut short
+			character = (character << 6) | ((unsigned char)text[index++] & 0x3F); // 6 more bits per byte
+		}
+		return character;
 	}
 
 } // namespace modulus::gfx

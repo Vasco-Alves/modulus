@@ -37,6 +37,11 @@ namespace modulus::gfx {
 		// and the height of all its lines together ('\n' starts a new line)
 		glm::vec2 measure(std::string_view text, float height) const;
 
+		// Reads one character of UTF-8 text, starting at byte 'index', and moves 'index' past it.
+		// (In UTF-8, a character takes 1 to 4 bytes: 'a' takes 1, an accented letter like 'é' 2.)
+		// Broken UTF-8 gives U+FFFD, the "replacement character", which fonts show as '?'.
+		static char32_t next_character(std::string_view text, size_t& index);
+
 	private:
 		Font() = default;
 

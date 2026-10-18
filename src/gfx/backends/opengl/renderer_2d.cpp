@@ -205,13 +205,12 @@ void main() {
 		DrawOptions glyph_options = options;
 		glm::vec2 pen = { 0.0f, 0.0f }; // Where the next character starts, from the text's top-left
 
-		for (unsigned char c : text) {
+		for (size_t index = 0; index < text.size();) {
+			char32_t c = Font::next_character(text, index);
 			if (c == '\n') {
 				pen = { 0.0f, pen.y + height };
 				continue;
 			}
-			if ((c & 0xC0) == 0x80)
-				continue; // The rest of a multi-byte UTF-8 character (the font shows the character once)
 
 			const Font::Glyph& glyph = font.get_glyph(c);
 			glm::vec2 glyph_top_left = pen + glyph.offset * scale;
