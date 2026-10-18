@@ -213,6 +213,24 @@ TEST_F(OpenGLTest, SettingAUniformChangesThatShader) {
 	EXPECT_EQ(value, 7);
 }
 
+TEST_F(OpenGLTest, ErrorsAreLoggedInDebugBuilds) {
+#ifdef NDEBUG
+	GTEST_SKIP() << "Only debug builds log OpenGL errors";
+#else
+	if (!glIsEnabled(GL_DEBUG_OUTPUT)) {
+		glGetError(); // Without GL_KHR_debug, even asking is an error
+		GTEST_SKIP() << "This driver has no debug output (GL_KHR_debug)";
+	}
+
+	testing::internal::CaptureStderr();
+	glBindVertexArray(12345); // Never created, so OpenGL refuses it
+	std::string errors = testing::internal::GetCapturedStderr();
+	glGetError();
+
+	EXPECT_NE(errors.find("OpenGL: "), std::string::npos) << errors;
+#endif
+}
+
 TEST_F(OpenGLTest, ShaderCreateReturnsNullWhenCompilingFails) {
 	EXPECT_EQ(gfx::Shader::create("this is not GLSL", red_fragment_shader), nullptr);
 	EXPECT_EQ(gfx::Shader::create(position_vertex_shader, "neither is this"), nullptr);

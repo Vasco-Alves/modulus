@@ -79,6 +79,14 @@ namespace modulus::platform {
 			// A hidden window still gets an OpenGL context, so it can also be used to draw offscreen
 			glfwWindowHint(GLFW_VISIBLE, config.visible ? GLFW_TRUE : GLFW_FALSE);
 
+			// Debug builds ask for a debug context: in one, the driver describes every OpenGL error
+			// (the graphics module logs those descriptions)
+#ifndef NDEBUG
+			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#else
+			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_FALSE);
+#endif
+
 			// Create the window
 			m_handle = glfwCreateWindow(
 				config.width,
