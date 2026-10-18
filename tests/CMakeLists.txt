@@ -7,6 +7,12 @@ include(FetchContent)
 # ==============================================================================
 message(STATUS "Modulus: Fetching GoogleTest...")
 
+# Give downloaded files the time they were extracted, so a new download always rebuilds
+# (CMake warns when this isn't chosen)
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
@@ -21,23 +27,31 @@ FetchContent_MakeAvailable(googletest)
 # ==============================================================================
 # 2. Define Test Executable
 # ==============================================================================
-add_executable(modulus_tests 
-    test_main.cpp
-    # Add other test files here later, e.g.:
-    # core/test_log.cpp
-    # platform/test_window.cpp
+add_executable(modulus_tests
+    test_headers.cpp
+    core/test_file.cpp
+    core/test_log.cpp
+    core/test_timer.cpp
 )
+
+if(MODULUS_BUILD_GFX)
+    target_sources(modulus_tests PRIVATE
+        gfx/test_buffer_layout.cpp
+        gfx/test_opengl.cpp   # Opens a hidden window. Skips itself when OpenGL 3.3 isn't available.
+    )
+
+    # The OpenGL tests check the GPU state directly, so they also use GLAD and GLFW
+    target_link_libraries(modulus_tests PRIVATE glad glfw)
+endif()
 
 # ==============================================================================
 # 3. Linking
 # ==============================================================================
-target_link_libraries(modulus_tests PRIVATE 
+target_link_libraries(modulus_tests PRIVATE
     modulus::modulus    # Link your framework
     GTest::gtest_main   # Link GTest (and its main function)
 )
-
-# Ensure tests can include "modulus/core/log.hpp"
-target_include_directories(modulus_tests PRIVATE "${PROJECT_SOURCE_DIR}/include")
+modulus_enable_warnings(modulus_tests)
 
 # ==============================================================================
 # 4. Registration (CTest)

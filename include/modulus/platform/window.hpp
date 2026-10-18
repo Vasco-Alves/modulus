@@ -11,6 +11,7 @@ namespace modulus::platform {
 		int width = 1280;
 		int height = 720;
 		bool vsync = true;
+		bool visible = true; // false creates the window hidden (for example for tests or tools)
 	};
 
 	// A function that finds an OpenGL function by name (e.g. "glClear")

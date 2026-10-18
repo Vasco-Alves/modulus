@@ -76,6 +76,9 @@ namespace modulus::platform {
 			glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
+			// A hidden window still gets an OpenGL context, so it can also be used to draw offscreen
+			glfwWindowHint(GLFW_VISIBLE, config.visible ? GLFW_TRUE : GLFW_FALSE);
+
 			// Create the window
 			m_handle = glfwCreateWindow(
 				config.width,
