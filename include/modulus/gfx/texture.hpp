@@ -17,7 +17,7 @@ namespace modulus::gfx {
 		Texture2D& operator=(const Texture2D&) = delete;
 
 		// False if the image couldn't be loaded
-		bool is_valid() const { return m_rendererID != 0; }
+		bool is_valid() const { return m_renderer_id != 0; }
 
 		void bind(uint32_t slot = 0) const;
 		void unbind() const;
@@ -26,7 +26,7 @@ namespace modulus::gfx {
 		int get_height() const { return m_height; }
 
 		// This can be useful for ImGui or raw API access, but keep it generic (uint32_t)
-		uint32_t get_renderer_id() const { return m_rendererID; }
+		uint32_t get_renderer_id() const { return m_renderer_id; }
 
 		// Like the constructor, but returns nullptr if the image couldn't be loaded
 		// (the error is logged), so you can check it with: if (!texture)
@@ -39,8 +39,8 @@ namespace modulus::gfx {
 		}
 
 	private:
-		uint32_t m_rendererID = 0;
-		std::string m_filePath;
+		uint32_t m_renderer_id = 0;
+		std::string m_file_path;
 		int m_width = 0, m_height = 0, m_bpp = 0;
 	};
 

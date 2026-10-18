@@ -76,7 +76,7 @@ namespace modulus::platform {
 	}
 
 	bool Input::is_key_down(Key key) {
-		if (!g_mainWindowHandle)
+		if (!g_main_window_handle)
 			return false;
 
 		int glfw_key = to_glfw_key(key);
@@ -84,12 +84,12 @@ namespace modulus::platform {
 			return false;
 
 		// The actual GLFW call
-		int state = glfwGetKey(g_mainWindowHandle, glfw_key);
+		int state = glfwGetKey(g_main_window_handle, glfw_key);
 		return state == GLFW_PRESS || state == GLFW_REPEAT;
 	}
 
 	bool Input::is_key_pressed(Key key) {
-		if (!g_mainWindowHandle)
+		if (!g_main_window_handle)
 			return false;
 
 		int glfw_key = to_glfw_key(key);
@@ -97,11 +97,11 @@ namespace modulus::platform {
 			return false;
 
 		// Filled by the key callback in platform_glfw.cpp
-		return g_keysPressed[glfw_key];
+		return g_keys_pressed[glfw_key];
 	}
 
 	bool Input::is_mouse_down(MouseButton button) {
-		if (!g_mainWindowHandle)
+		if (!g_main_window_handle)
 			return false;
 
 		int glfw_button;
@@ -123,20 +123,20 @@ namespace modulus::platform {
 		}
 
 		// The actual GLFW call
-		int state = glfwGetMouseButton(g_mainWindowHandle, glfw_button);
+		int state = glfwGetMouseButton(g_main_window_handle, glfw_button);
 		return state == GLFW_PRESS;
 	}
 
 	std::pair<float, float> Input::get_mouse_position() {
-		if (!g_mainWindowHandle) return { 0.0f, 0.0f };
+		if (!g_main_window_handle) return { 0.0f, 0.0f };
 
 		double x, y;
-		glfwGetCursorPos(g_mainWindowHandle, &x, &y);
+		glfwGetCursorPos(g_main_window_handle, &x, &y);
 		return { (float)x, (float)y };
 	}
 
 	float Input::get_mouse_scroll() {
-		return g_scrollDeltaY;
+		return g_scroll_delta_y;
 	}
 
 } // namespace modulus::platform

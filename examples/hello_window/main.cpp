@@ -63,16 +63,16 @@ int main() {
 	// =========================================================================
 
 	// app_path() finds the assets next to the program, whatever folder it was started from
-	auto vertSrc = modulus::core::File::read_text(modulus::core::File::app_path("assets/shaders/triangle.vert"));
-	auto fragSrc = modulus::core::File::read_text(modulus::core::File::app_path("assets/shaders/triangle.frag"));
+	auto vert_src = modulus::core::File::read_text(modulus::core::File::app_path("assets/shaders/triangle.vert"));
+	auto frag_src = modulus::core::File::read_text(modulus::core::File::app_path("assets/shaders/triangle.frag"));
 
-	if (!vertSrc || !fragSrc) {
+	if (!vert_src || !frag_src) {
 		MOD_FATAL("Could not load shaders! Is the assets folder next to the program?");
 		return -1;
 	}
 
 	// create() returns nullptr if the shader doesn't compile (the compiler's error is logged)
-	auto shader = modulus::gfx::Shader::create(*vertSrc, *fragSrc);
+	auto shader = modulus::gfx::Shader::create(*vert_src, *frag_src);
 	if (!shader)
 		return -1;
 
@@ -84,7 +84,7 @@ int main() {
 	if (!modulus::audio::init())
 		return -1;
 
-	std::string soundPath = modulus::core::File::app_path("assets/test.mp3");
+	std::string sound_path = modulus::core::File::app_path("assets/test.mp3");
 
 	// =========================================================================
 	// 6. Main Loop
@@ -96,7 +96,7 @@ int main() {
 
 		// "pressed", not "down": play once per press, not every frame while held
 		if (modulus::platform::Input::is_key_pressed(modulus::platform::Key::Space)) {
-			modulus::audio::play_sound(soundPath);
+			modulus::audio::play_sound(sound_path);
 		}
 
 		// 1. Clear Screen

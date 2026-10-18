@@ -11,12 +11,12 @@ namespace modulus::gfx {
 	class Shader {
 	public:
 		// Compiles and links the shader. If that fails, the error is logged and is_valid() returns false.
-		Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
+		Shader(const std::string& vertex_src, const std::string& fragment_src);
 		~Shader();
 
 		// Like the constructor, but returns nullptr if the shader doesn't compile or link
 		// (the error is logged), so you can check it with: if (!shader)
-		static std::shared_ptr<Shader> create(const std::string& vertexSrc, const std::string& fragmentSrc);
+		static std::shared_ptr<Shader> create(const std::string& vertex_src, const std::string& fragment_src);
 
 		// Owns a GPU object, so copying is not allowed (both copies would delete it)
 		Shader(const Shader&) = delete;
@@ -43,7 +43,7 @@ namespace modulus::gfx {
 
 	private:
 		unsigned int m_renderer_id = 0;
-		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
+		mutable std::unordered_map<std::string, int> m_uniform_location_cache;
 
 		int get_cached_uniform_location(const std::string& name) const;
 	};

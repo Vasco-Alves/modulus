@@ -17,21 +17,21 @@ namespace modulus::platform {
 	}
 
 	static void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset) {
-		g_scrollDeltaY += (float)yoffset;
+		g_scroll_delta_y += (float)yoffset;
 	}
 
 	static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) {
 		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT instead,
 		// so this only records real presses. (Unknown keys are -1, so we skip those.)
 		if (action == GLFW_PRESS && key >= 0)
-			g_keysPressed[key] = true;
+			g_keys_pressed[key] = true;
 	}
 
-	GLFWwindow* g_mainWindowHandle = nullptr;
+	GLFWwindow* g_main_window_handle = nullptr;
 
-	float g_scrollDeltaY = 0.0f;
+	float g_scroll_delta_y = 0.0f;
 
-	bool g_keysPressed[GLFW_KEY_LAST + 1] = {};
+	bool g_keys_pressed[GLFW_KEY_LAST + 1] = {};
 
 	// How many windows are open right now.
 	// GLFW starts when the first window opens and stops when the last one closes,
@@ -108,8 +108,8 @@ namespace modulus::platform {
 			s_window_count++;
 
 			// The first window is the "main" window: the Input functions read from it
-			if (g_mainWindowHandle == nullptr) {
-				g_mainWindowHandle = m_handle;
+			if (g_main_window_handle == nullptr) {
+				g_main_window_handle = m_handle;
 				glfwSetScrollCallback(m_handle, scroll_callback);
 				glfwSetKeyCallback(m_handle, key_callback);
 			}
@@ -134,8 +134,8 @@ namespace modulus::platform {
 			if (!m_handle)
 				return;
 
-			if (g_mainWindowHandle == m_handle) {
-				g_mainWindowHandle = nullptr;
+			if (g_main_window_handle == m_handle) {
+				g_main_window_handle = nullptr;
 			}
 
 			glfwDestroyWindow(m_handle);
@@ -152,9 +152,9 @@ namespace modulus::platform {
 				return false;
 
 			// A new frame starts: forget the main window's scroll and key presses from last frame
-			if (m_handle == g_mainWindowHandle) {
-				g_scrollDeltaY = 0.0f;
-				for (bool& pressed : g_keysPressed)
+			if (m_handle == g_main_window_handle) {
+				g_scroll_delta_y = 0.0f;
+				for (bool& pressed : g_keys_pressed)
 					pressed = false;
 			}
 

@@ -30,9 +30,9 @@ namespace modulus::gfx {
 		return id;
 	}
 
-	Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc) {
-		unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertexSrc);
-		unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragmentSrc);
+	Shader::Shader(const std::string& vertex_src, const std::string& fragment_src) {
+		unsigned int vs = compile_shader(GL_VERTEX_SHADER, vertex_src);
+		unsigned int fs = compile_shader(GL_FRAGMENT_SHADER, fragment_src);
 
 		// Only link if both stages compiled. Otherwise m_renderer_id stays 0, which means "not valid".
 		if (vs != 0 && fs != 0) {
@@ -59,8 +59,8 @@ namespace modulus::gfx {
 		glDeleteShader(fs);
 	}
 
-	std::shared_ptr<Shader> Shader::create(const std::string& vertexSrc, const std::string& fragmentSrc) {
-		auto shader = std::make_shared<Shader>(vertexSrc, fragmentSrc);
+	std::shared_ptr<Shader> Shader::create(const std::string& vertex_src, const std::string& fragment_src) {
+		auto shader = std::make_shared<Shader>(vertex_src, fragment_src);
 		if (!shader->is_valid())
 			return nullptr; // The error was already logged
 
@@ -117,8 +117,8 @@ namespace modulus::gfx {
 			return -1;
 
 		// 1. Check Cache
-		auto it = m_UniformLocationCache.find(name);
-		if (it != m_UniformLocationCache.end())
+		auto it = m_uniform_location_cache.find(name);
+		if (it != m_uniform_location_cache.end())
 			return it->second;
 
 		// 2. Not found? Look it up in OpenGL
@@ -129,7 +129,7 @@ namespace modulus::gfx {
 		}
 
 		// 3. Add to Cache
-		m_UniformLocationCache[name] = location;
+		m_uniform_location_cache[name] = location;
 
 		return location;
 	}

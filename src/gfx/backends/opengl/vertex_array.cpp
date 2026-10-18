@@ -36,12 +36,12 @@ namespace modulus::gfx {
 		glBindVertexArray(0);
 	}
 
-	void VertexArray::add_vertex_buffer(const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout) {
+	void VertexArray::add_vertex_buffer(const std::shared_ptr<VertexBuffer>& vertex_buffer, const BufferLayout& layout) {
 		// 1. Bind VAO
 		glBindVertexArray(m_renderer_id);
 
 		// 2. Bind VBO
-		vertexBuffer->bind();
+		vertex_buffer->bind();
 
 		// 3. Set Attributes (The Recipe)
 		// Attributes are numbered across all the vertex buffers, so the first attribute
@@ -78,17 +78,17 @@ namespace modulus::gfx {
 		// Unbind, so that binding buffers later can't change this VAO by accident
 		glBindVertexArray(0);
 
-		m_vertexBuffers.push_back(vertexBuffer);
+		m_vertex_buffers.push_back(vertex_buffer);
 	}
 
-	void VertexArray::set_index_buffer(const std::shared_ptr<IndexBuffer>& indexBuffer) {
+	void VertexArray::set_index_buffer(const std::shared_ptr<IndexBuffer>& index_buffer) {
 		glBindVertexArray(m_renderer_id);
-		indexBuffer->bind(); // Binding IBO while VAO is active ties them together
+		index_buffer->bind(); // Binding IBO while VAO is active ties them together
 
 		// Unbind the VAO (but not the IBO: unbinding that now would untie them again)
 		glBindVertexArray(0);
 
-		m_indexBuffer = indexBuffer;
+		m_index_buffer = index_buffer;
 	}
 
 } // namespace modulus::gfx

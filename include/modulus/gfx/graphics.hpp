@@ -22,7 +22,7 @@ namespace modulus::gfx {
 
 	void clear(const Color& color);
 
-	void draw_indexed(const std::shared_ptr<VertexArray>& vertexArray);
+	void draw_indexed(const std::shared_ptr<VertexArray>& vertex_array);
 
 	// Shows the finished frame in the window. Call it once at the end of every frame.
 	void present(platform::IWindow& window);
