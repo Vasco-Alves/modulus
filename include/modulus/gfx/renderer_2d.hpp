@@ -18,18 +18,36 @@ namespace modulus::gfx {
 	class VertexArray;
 	class VertexBuffer;
 
-	// Draws rectangles ("quads") with a color or a texture (sprites), fast: it collects everything
-	// drawn between begin() and end() and sends it to the GPU in as few draw calls as possible,
-	// instead of one draw call per rectangle.
+	// Optional settings for Renderer2D's draw functions. Name only the ones you need, in this order:
+	//   renderer->draw_sprite(position, size, sprite, { .origin = { 0.5f, 0.5f }, .rotation = 45.0f });
+	struct DrawOptions {
+		// The point of the quad that 'position' refers to, and that it turns around:
+		// (0, 0) is its top-left corner (the default), (0.5, 0.5) its center, and (0.5, 1) the
+		// middle of its bottom edge (handy for a character's feet)
+		glm::vec2 origin = { 0.0f, 0.0f };
+
+		float rotation = 0.0f; // In degrees, clockwise, around the origin
+
+		bool flip_x = false; // Mirror the texture left to right (like a character turning around)
+		bool flip_y = false; // Mirror the texture top to bottom
+
+		Color tint = { 1.0f, 1.0f, 1.0f, 1.0f }; // Multiplies the colors: white keeps them as they are
+	};
+
+	// Draws rectangles ("quads") with a color, a texture, or part of a texture (a sprite), fast:
+	// it collects everything drawn between begin() and end() and sends it to the GPU in as few
+	// draw calls as possible, instead of one draw call per rectangle.
 	//
 	//   renderer->begin(camera);
 	//   renderer->draw_quad({ 10, 10 }, { 100, 50 }, { 1.0f, 0.0f, 0.0f, 1.0f }); // A red rectangle
-	//   renderer->draw_quad({ 200, 10 }, { 64, 64 }, *player_texture);            // A sprite
+	//   renderer->draw_quad({ 200, 10 }, { 64, 64 }, *texture);                   // A whole texture
+	//   renderer->draw_sprite({ 300, 10 }, { 64, 64 }, sheet.get(3));             // One cell of a sprite sheet
 	//   renderer->end();
 	//
 	// Positions and sizes are in world units (see Camera2D): with the default camera, window pixels
-	// with (0, 0) at the top-left corner. A quad's position is its top-left corner.
-	// Quads are drawn in order, so later ones cover earlier ones.
+	// with (0, 0) at the top-left corner. 'position' is where the quad's origin goes, which is its
+	// top-left corner unless DrawOptions says otherwise. Quads are drawn in order, so later ones
+	// cover earlier ones.
 	class Renderer2D {
 	public:
 		// Call gfx::init() first. Returns nullptr if the renderer can't be set up (the error is logged).
@@ -44,23 +62,12 @@ namespace modulus::gfx {
 		// Starts collecting quads, seen through 'camera'
 		void begin(const Camera2D& camera = {});
 
-		void draw_quad(glm::vec2 position, glm::vec2 size, const Color& color);
-
-		// 'tint' multiplies the texture's colors: white keeps them as they are
-		void draw_quad(glm::vec2 position, glm::vec2 size, const Texture2D& texture,
-		               const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
-
-		// Like draw_quad(), but turned 'degrees' clockwise around the quad's center
-		void draw_rotated_quad(glm::vec2 position, glm::vec2 size, float degrees, const Color& color);
-		void draw_rotated_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D& texture,
-		                       const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
+		void draw_quad(glm::vec2 position, glm::vec2 size, const Color& color, const DrawOptions& options = {});
+		void draw_quad(glm::vec2 position, glm::vec2 size, const Texture2D& texture, const DrawOptions& options = {});
 
 		// Draws a sprite: one part of a texture, like a cell of a SpriteSheet.
 		// An empty sprite (no texture) draws nothing.
-		void draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite,
-		                 const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
-		void draw_rotated_sprite(glm::vec2 position, glm::vec2 size, float degrees, const Sprite& sprite,
-		                         const Color& tint = { 1.0f, 1.0f, 1.0f, 1.0f });
+		void draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const DrawOptions& options = {});
 
 		// Draws everything collected since begin(). Textures must stay alive until then.
 		void end();
@@ -89,8 +96,8 @@ namespace modulus::gfx {
 		// tex_coords: the part of the texture to show, as (left, top, right, bottom) in OpenGL's 0 to 1
 		// texture coordinates. The default is the whole texture: its top is at 1, because OpenGL
 		// stores images bottom row first.
-		void add_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D* texture, const Color& color,
-		              glm::vec4 tex_coords = { 0.0f, 1.0f, 1.0f, 0.0f });
+		void add_quad(glm::vec2 position, glm::vec2 size, const Texture2D* texture, const Color& color,
+		              const DrawOptions& options, glm::vec4 tex_coords = { 0.0f, 1.0f, 1.0f, 0.0f });
 		int find_texture_slot(const Texture2D* texture); // -1 if the batch has no free slot left
 		void flush(); // Draws the quads collected so far and starts an empty batch
 
@@ -103,7 +110,7 @@ namespace modulus::gfx {
 		// The current batch: its vertices and the textures they use
 		std::vector<QuadVertex> m_vertices;
 		std::array<const Texture2D*, max_textures_per_draw_call> m_texture_slots = {};
-		int m_texture_slot_count = 1;                             // Slot 0 always holds the white texture
+		int m_texture_slot_count = 1;                          // Slot 0 always holds the white texture
 		int m_texture_slot_limit = max_textures_per_draw_call; // Lower if the GPU has fewer texture units
 
 		Stats m_stats;

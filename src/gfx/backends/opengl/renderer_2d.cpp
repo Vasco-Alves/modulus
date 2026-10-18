@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <utility>
 
 namespace modulus::gfx {
 
@@ -153,27 +154,18 @@ void main() {
 		m_shader->set_mat4("u_ViewProjection", camera.get_view_projection(window_size));
 	}
 
-	void Renderer2D::draw_quad(glm::vec2 position, glm::vec2 size, const Color& color) {
-		add_quad(position, size, 0.0f, nullptr, color);
+	// Textures are drawn in their own colors, unless DrawOptions::tint changes them
+	static const Color white = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	void Renderer2D::draw_quad(glm::vec2 position, glm::vec2 size, const Color& color, const DrawOptions& options) {
+		add_quad(position, size, nullptr, color, options);
 	}
 
-	void Renderer2D::draw_quad(glm::vec2 position, glm::vec2 size, const Texture2D& texture, const Color& tint) {
-		add_quad(position, size, 0.0f, &texture, tint);
+	void Renderer2D::draw_quad(glm::vec2 position, glm::vec2 size, const Texture2D& texture, const DrawOptions& options) {
+		add_quad(position, size, &texture, white, options);
 	}
 
-	void Renderer2D::draw_rotated_quad(glm::vec2 position, glm::vec2 size, float degrees, const Color& color) {
-		add_quad(position, size, degrees, nullptr, color);
-	}
-
-	void Renderer2D::draw_rotated_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D& texture, const Color& tint) {
-		add_quad(position, size, degrees, &texture, tint);
-	}
-
-	void Renderer2D::draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const Color& tint) {
-		draw_rotated_sprite(position, size, 0.0f, sprite, tint);
-	}
-
-	void Renderer2D::draw_rotated_sprite(glm::vec2 position, glm::vec2 size, float degrees, const Sprite& sprite, const Color& tint) {
+	void Renderer2D::draw_sprite(glm::vec2 position, glm::vec2 size, const Sprite& sprite, const DrawOptions& options) {
 		if (!sprite.texture || !sprite.texture->is_valid())
 			return; // An empty sprite, for example from SpriteSheet::get() with a cell that doesn't exist
 
@@ -189,15 +181,15 @@ void main() {
 			1.0f - (region.y + region.height) / height, // Bottom
 		};
 
-		add_quad(position, size, degrees, sprite.texture.get(), tint, tex_coords);
+		add_quad(position, size, sprite.texture.get(), white, options, tex_coords);
 	}
 
 	void Renderer2D::end() {
 		flush();
 	}
 
-	void Renderer2D::add_quad(glm::vec2 position, glm::vec2 size, float degrees, const Texture2D* texture, const Color& color,
-	                          glm::vec4 tex_coords) {
+	void Renderer2D::add_quad(glm::vec2 position, glm::vec2 size, const Texture2D* texture, const Color& color,
+	                          const DrawOptions& options, glm::vec4 tex_coords) {
 		// The batch is full: draw it, and continue with an empty one
 		if (m_vertices.size() == max_quads_per_draw_call * 4)
 			flush();
@@ -212,24 +204,32 @@ void main() {
 			}
 		}
 
-		// The corners, clockwise from the top-left (y goes down)
+		// The corners, clockwise from the top-left (y goes down), measured from the origin
+		glm::vec2 origin = options.origin * size;
 		glm::vec2 corners[4] = {
-			position,
-			position + glm::vec2(size.x, 0.0f),
-			position + size,
-			position + glm::vec2(0.0f, size.y),
+			glm::vec2(0.0f, 0.0f) - origin,
+			glm::vec2(size.x, 0.0f) - origin,
+			size - origin,
+			glm::vec2(0.0f, size.y) - origin,
 		};
 
-		if (degrees != 0.0f) {
-			// Turn each corner around the center. Because y goes down, a positive angle turns clockwise.
-			glm::vec2 center = position + size * 0.5f;
-			float cosine = std::cos(glm::radians(degrees));
-			float sine = std::sin(glm::radians(degrees));
-			for (glm::vec2& corner : corners) {
-				glm::vec2 offset = corner - center;
-				corner = center + glm::vec2(offset.x * cosine - offset.y * sine, offset.x * sine + offset.y * cosine);
-			}
+		// Turn them around the origin. Because y goes down, a positive angle turns clockwise.
+		if (options.rotation != 0.0f) {
+			float cosine = std::cos(glm::radians(options.rotation));
+			float sine = std::sin(glm::radians(options.rotation));
+			for (glm::vec2& corner : corners)
+				corner = glm::vec2(corner.x * cosine - corner.y * sine, corner.x * sine + corner.y * cosine);
 		}
+
+		// Then put the origin at 'position'
+		for (glm::vec2& corner : corners)
+			corner += position;
+
+		// Mirroring the texture just swaps the sides it is read from
+		if (options.flip_x)
+			std::swap(tex_coords.x, tex_coords.z); // Left <-> right
+		if (options.flip_y)
+			std::swap(tex_coords.y, tex_coords.w); // Top <-> bottom
 
 		// Each corner's texture coordinate, in the same order as the corners
 		const glm::vec2 corner_tex_coords[4] = {
@@ -238,7 +238,8 @@ void main() {
 			{ tex_coords.z, tex_coords.w }, // Right, bottom
 			{ tex_coords.x, tex_coords.w }, // Left, bottom
 		};
-		glm::vec4 rgba = { color.r, color.g, color.b, color.a };
+		const Color& tint = options.tint;
+		glm::vec4 rgba = { color.r * tint.r, color.g * tint.g, color.b * tint.b, color.a * tint.a };
 
 		for (int i = 0; i < 4; ++i)
 			m_vertices.push_back({ corners[i], rgba, corner_tex_coords[i], slot });

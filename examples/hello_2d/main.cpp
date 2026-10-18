@@ -76,8 +76,9 @@ int main() {
 			}
 		}
 
-		// A textured square on top, turning 45 degrees per second
-		renderer->draw_rotated_quad({ 540.0f, 260.0f }, { 200.0f, 200.0f }, timer.elapsed() * 45.0f, *checkerboard);
+		// A textured square on top, centered on (640, 360) and turning around its center, 45 degrees per second
+		renderer->draw_quad({ 640.0f, 360.0f }, { 200.0f, 200.0f }, *checkerboard,
+		                    { .origin = { 0.5f, 0.5f }, .rotation = timer.elapsed() * 45.0f });
 
 		// A white square under the mouse. The mouse position is a point on the window,
 		// so turn it into a point in the world first (they differ once you zoom or drag).

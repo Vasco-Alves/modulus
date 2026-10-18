@@ -58,9 +58,9 @@ static std::shared_ptr<gfx::Texture2D> make_tile_set() {
 			image.set(Sand * 8 + x, y, 220, 200, speck ? 120 : 150);
 			image.set(Stone * 8 + x, y, speck ? 95 : 135, speck ? 95 : 135, speck ? 100 : 140);
 
-			// The player: a round yellow face with eyes and a mouth, on a transparent background
-			bool eye = y == 2 && (x == 2 || x == 5);
-			bool mouth = y == 5 && x >= 2 && x <= 5;
+			// The player: a round yellow face looking to the right, on a transparent background
+			bool eye = y == 2 && (x == 3 || x == 6);
+			bool mouth = y == 5 && x >= 3 && x <= 6;
 			bool face = (x - 3.5f) * (x - 3.5f) + (y - 3.5f) * (y - 3.5f) <= 13.0f;
 			if (eye || mouth)
 				image.set(Player * 8 + x, y, 40, 30, 20);
@@ -134,6 +134,7 @@ int main() {
 	}
 
 	glm::vec2 player = { 640.0f, 360.0f };
+	bool facing_left = false;
 	int collected = 0;
 	core::Timer frame_timer;
 
@@ -154,6 +155,12 @@ int main() {
 		if (direction.x != 0.0f || direction.y != 0.0f)
 			player += glm::normalize(direction) * 250.0f * seconds;
 
+		// Face the way we last walked (the sprite looks right, so flip it to look left)
+		if (direction.x < 0.0f)
+			facing_left = true;
+		else if (direction.x > 0.0f)
+			facing_left = false;
+
 		for (Coin& coin : coins) {
 			coin.animation.update(seconds);
 
@@ -173,12 +180,13 @@ int main() {
 			}
 		}
 
+		// The coins and the player are placed by their center
 		for (const Coin& coin : coins) {
 			if (!coin.collected)
-				renderer->draw_sprite(coin.center - glm::vec2(16.0f, 16.0f), { 32.0f, 32.0f }, coin.animation.get_sprite());
+				renderer->draw_sprite(coin.center, { 32.0f, 32.0f }, coin.animation.get_sprite(), { .origin = { 0.5f, 0.5f } });
 		}
 
-		renderer->draw_sprite(player - glm::vec2(20.0f, 20.0f), { 40.0f, 40.0f }, tiles.get(Player));
+		renderer->draw_sprite(player, { 40.0f, 40.0f }, tiles.get(Player), { .origin = { 0.5f, 0.5f }, .flip_x = facing_left });
 
 		renderer->end();
 		gfx::present(*window);

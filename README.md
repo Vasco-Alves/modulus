@@ -111,6 +111,16 @@ while (window->update()) {
 
 Pass a `Camera2D` to `begin()` to scroll and zoom. [examples/hello_2d](examples/hello_2d/main.cpp) shows textures, rotation and a camera that follows the mouse.
 
+Every draw function also takes optional `DrawOptions`: the `origin` (the point of the quad that goes to `position`, and that it turns around), `rotation`, `flip_x` / `flip_y`, and a `tint`. Name the ones you need, in that order:
+
+```cpp
+// Spin around the center
+renderer->draw_quad(center, { 64, 64 }, *texture, { .origin = { 0.5f, 0.5f }, .rotation = angle });
+
+// Stand on the ground, facing the way the character walks
+renderer->draw_sprite(feet, { 32, 48 }, sprite, { .origin = { 0.5f, 1.0f }, .flip_x = facing_left });
+```
+
 For sprite sheets and tile sets, cut a texture into cells and draw one at a time, or play a few of them as an animation:
 
 ```cpp

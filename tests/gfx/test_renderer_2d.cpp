@@ -115,17 +115,43 @@ TEST_F(Renderer2DTest, TintMultipliesTheTextureColors) {
 	ASSERT_NE(white, nullptr);
 
 	renderer->begin();
-	renderer->draw_quad({ 0.0f, 0.0f }, { 20.0f, 20.0f }, *white, green);
+	renderer->draw_quad({ 0.0f, 0.0f }, { 20.0f, 20.0f }, *white, { .tint = green });
+	renderer->draw_quad({ 30.0f, 0.0f }, { 20.0f, 20.0f }, gfx::Color{ 1.0f, 1.0f, 0.0f, 1.0f }, { .tint = red }); // Yellow * red
 	renderer->end();
 
 	EXPECT_TRUE(has_color(target->pixel(10, 10), 0, 255, 0));
+	EXPECT_TRUE(has_color(target->pixel(40, 10), 255, 0, 0));
 }
 
-TEST_F(Renderer2DTest, RotatesAroundTheQuadsCenter) {
-	// A wide bar (x 100..200, y 100..120) turned a quarter around its center (150, 110)
-	// becomes a tall bar: x 140..160, y 60..160
+TEST_F(Renderer2DTest, OriginIsThePointThatGoesToThePosition) {
+	// Origin at the middle of the bottom edge: a 20x40 quad stands on (100, 100),
+	// so it covers x 90..110 and y 60..100
 	renderer->begin();
-	renderer->draw_rotated_quad({ 100.0f, 100.0f }, { 100.0f, 20.0f }, 90.0f, red);
+	renderer->draw_quad({ 100.0f, 100.0f }, { 20.0f, 40.0f }, red, { .origin = { 0.5f, 1.0f } });
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(90, 60), 255, 0, 0));
+	EXPECT_TRUE(has_color(target->pixel(109, 99), 255, 0, 0));
+	EXPECT_TRUE(has_color(target->pixel(100, 100), 0, 0, 255)); // Just below
+	EXPECT_TRUE(has_color(target->pixel(89, 80), 0, 0, 255));   // Just left
+}
+
+TEST_F(Renderer2DTest, RotatesAroundTheTopLeftCornerByDefault) {
+	// A wide bar from (100, 100) turned a quarter around that corner hangs down to its left:
+	// x 80..100, y 100..200
+	renderer->begin();
+	renderer->draw_quad({ 100.0f, 100.0f }, { 100.0f, 20.0f }, red, { .rotation = 90.0f });
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(90, 150), 255, 0, 0));
+	EXPECT_TRUE(has_color(target->pixel(150, 110), 0, 0, 255)); // Where the bar was before turning
+}
+
+TEST_F(Renderer2DTest, RotatesAroundTheOrigin) {
+	// A wide bar centered on (150, 110), turned a quarter around its center, becomes a tall bar:
+	// x 140..160, y 60..160
+	renderer->begin();
+	renderer->draw_quad({ 150.0f, 110.0f }, { 100.0f, 20.0f }, red, { .origin = { 0.5f, 0.5f }, .rotation = 90.0f });
 	renderer->end();
 
 	EXPECT_TRUE(has_color(target->pixel(150, 65), 255, 0, 0));
@@ -141,11 +167,32 @@ TEST_F(Renderer2DTest, PositiveAnglesTurnClockwise) {
 
 	// A quarter turn clockwise moves the left half to the top
 	renderer->begin();
-	renderer->draw_rotated_quad({ 100.0f, 100.0f }, { 100.0f, 100.0f }, 90.0f, *texture);
+	renderer->draw_quad({ 150.0f, 150.0f }, { 100.0f, 100.0f }, *texture, { .origin = { 0.5f, 0.5f }, .rotation = 90.0f });
 	renderer->end();
 
 	EXPECT_TRUE(has_color(target->pixel(150, 115), 255, 0, 0));
 	EXPECT_TRUE(has_color(target->pixel(150, 185), 0, 255, 0));
+}
+
+TEST_F(Renderer2DTest, FlipMirrorsTheTexture) {
+	const uint8_t left_right[] = { 255, 0, 0, 255,   0, 255, 0, 255 }; // Red | green
+	const uint8_t top_bottom[] = { 255, 0, 0, 255,   0, 255, 0, 255 }; // Red over green
+	auto horizontal = gfx::Texture2D::create(2, 1, left_right);
+	auto vertical = gfx::Texture2D::create(1, 2, top_bottom);
+	ASSERT_NE(horizontal, nullptr);
+	ASSERT_NE(vertical, nullptr);
+	horizontal->set_filter(gfx::TextureFilter::Nearest);
+	vertical->set_filter(gfx::TextureFilter::Nearest);
+
+	renderer->begin();
+	renderer->draw_quad({ 0.0f, 0.0f }, { 64.0f, 32.0f }, *horizontal, { .flip_x = true });
+	renderer->draw_quad({ 100.0f, 0.0f }, { 32.0f, 64.0f }, *vertical, { .flip_y = true });
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(16, 16), 0, 255, 0, 0));  // Green is on the left now
+	EXPECT_TRUE(has_color(target->pixel(48, 16), 255, 0, 0, 0));  // and red on the right
+	EXPECT_TRUE(has_color(target->pixel(116, 16), 0, 255, 0, 0)); // Green is on top now
+	EXPECT_TRUE(has_color(target->pixel(116, 48), 255, 0, 0, 0)); // and red below
 }
 
 TEST_F(Renderer2DTest, ColorsAndTexturesShareOneDrawCall) {
@@ -261,4 +308,20 @@ TEST_F(Renderer2DTest, EmptySpritesDrawNothing) {
 
 	EXPECT_EQ(renderer->get_stats().quads, 0u);
 	EXPECT_TRUE(has_color(target->pixel(16, 16), 0, 0, 255));
+}
+
+TEST_F(Renderer2DTest, FlippedSpritesStayInTheirCell) {
+	// A 4x1 texture in cells of 2x1: red, green | white, yellow
+	const uint8_t pixels[] = { 255, 0, 0, 255,   0, 255, 0, 255,   255, 255, 255, 255,   255, 255, 0, 255 };
+	auto texture = gfx::Texture2D::create(4, 1, pixels);
+	ASSERT_NE(texture, nullptr);
+	texture->set_filter(gfx::TextureFilter::Nearest);
+	gfx::SpriteSheet sheet(texture, 2, 1);
+
+	renderer->begin();
+	renderer->draw_sprite({ 0.0f, 0.0f }, { 64.0f, 32.0f }, sheet.get(1), { .flip_x = true });
+	renderer->end();
+
+	EXPECT_TRUE(has_color(target->pixel(16, 16), 255, 255, 0, 0));   // Yellow on the left now
+	EXPECT_TRUE(has_color(target->pixel(48, 16), 255, 255, 255, 0)); // and white on the right
 }
