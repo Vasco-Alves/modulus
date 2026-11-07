@@ -19,7 +19,7 @@ Instead of spending the start of every project gluing libraries together (window
 | Module   | CMake target        | What it does                              | Built on                          |
 | -------- | ------------------- | ----------------------------------------- | --------------------------------- |
 | Core     | `modulus::core`     | Logging, files and asset paths, timer     | No external libraries             |
-| Platform | `modulus::platform` | Window, keyboard and mouse input          | GLFW                              |
+| Platform | `modulus::platform` | Window, keyboard and mouse input, typed text, clipboard | GLFW                |
 | Gfx      | `modulus::gfx`      | 2D renderer and camera, shaders, buffers, textures | OpenGL 3.3 (GLAD), GLM, stb_image |
 | Audio    | `modulus::audio`    | Playing sound files                       | miniaudio                         |
 
@@ -167,6 +167,30 @@ renderer->end();
 ```
 
 [examples/hello_sprites](examples/hello_sprites/main.cpp) is a little game made this way, with a tile map, animated coins, and a sound when you collect one.
+
+### Reading Input
+
+`Input` answers questions about the keyboard, the mouse and typing. The answers change once per frame, in the main (first) window's `update()`:
+
+```cpp
+using modulus::platform::Input;
+using modulus::platform::Key;
+
+if (Input::is_key_down(Key::Right))    // Every frame while it's held: walking
+    position.x += speed * window->get_frame_time();
+if (Input::is_key_pressed(Key::Space)) // Only in the frame it went down: jumping
+    jump();
+```
+
+For a text field, `get_typed_text()` is what was typed this frame, as UTF-8, following the keyboard layout and accent keys. Enter and Backspace are keys, not text, and `is_key_repeated()` is true again each time a held key repeats:
+
+```cpp
+name += Input::get_typed_text();
+if (Input::is_key_repeated(Key::Backspace))
+    remove_last_character(name); // A whole character: in UTF-8 one can take several bytes
+```
+
+Typing a letter also presses its key, so ignore the game's own keys while a text field is open (the key that opens the field types its letter in that same frame, too). `get_clipboard_text()` and `set_clipboard_text()` paste and copy; read the clipboard only when pasting, because on Linux that means waiting for the program that holds it. [examples/hello_text](examples/hello_text/main.cpp) has a name field with Backspace, Ctrl+V and Ctrl+C.
 
 ### Playing Sounds
 
