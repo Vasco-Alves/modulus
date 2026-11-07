@@ -14,8 +14,8 @@ namespace modulus::platform {
 	// =========================================================================
 
 	// This function catches errors from inside GLFW (e.g. invalid monitor)
-	// and pipes them into our own Logging system.
-	static void glfw_error_callback(int error, const char* description) {
+	// and pipes them into our own Logging system. (Not static: input_glfw.cpp uses it too.)
+	void log_glfw_error(int error, const char* description) {
 		MOD_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
@@ -108,7 +108,7 @@ namespace modulus::platform {
 
 	static bool start_glfw() {
 		// Redirect GLFW errors to modulus logger
-		glfwSetErrorCallback(glfw_error_callback);
+		glfwSetErrorCallback(log_glfw_error);
 
 		if (!glfwInit()) {
 			MOD_FATAL("Failed to initialize GLFW!");

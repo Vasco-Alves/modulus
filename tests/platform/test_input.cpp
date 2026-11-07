@@ -1,6 +1,7 @@
 // Tests the frame-by-frame input logic by sending the window fake events.
 // GLFW can't inject real events, but setting a callback returns the previous one, which is
 // Modulus' own handler. Calling it is exactly what GLFW does when a real key goes down.
+// The InputTest tests open a hidden window, and skip themselves without a display.
 
 #include <GLFW/glfw3.h>
 #include <gtest/gtest.h>
@@ -9,6 +10,7 @@
 #include <modulus/platform/platform.hpp>
 
 #include <memory>
+#include <string>
 
 using namespace modulus::platform;
 
@@ -152,6 +154,28 @@ TEST_F(InputTest, CodePointsThatArentCharactersAreSkipped) {
 	EXPECT_EQ(Input::get_typed_text(), "a");
 }
 
+TEST_F(InputTest, ClipboardHoldsText) {
+	// This is the computer's real clipboard, so the text on it is put back afterwards. (Anything
+	// else, like a picture, is lost. Under the virtual display of the CI, the clipboard starts empty.)
+	std::string before = Input::get_clipboard_text();
+
+	Input::set_clipboard_text("Ol\xC3\xA1, clipboard"); // In UTF-8, with an a with an acute accent
+	EXPECT_EQ(Input::get_clipboard_text(), "Ol\xC3\xA1, clipboard");
+
+	Input::set_clipboard_text(before);
+}
+
+TEST_F(InputTest, AClipboardWithoutTextLogsNoError) {
+	// Under the virtual display of the CI, a newly started GLFW finds no text on the clipboard. GLFW
+	// reports that as an error, but for Input it's normal: nothing to paste. (Where the clipboard
+	// holds text, this only checks that reading it logs no error.)
+	testing::internal::CaptureStderr();
+	Input::get_clipboard_text();
+	std::string errors = testing::internal::GetCapturedStderr();
+
+	EXPECT_EQ(errors.find("[ERROR]"), std::string::npos) << errors;
+}
+
 TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 	press_key(GLFW_KEY_SPACE);
 	repeat_key(GLFW_KEY_BACKSPACE);
@@ -170,4 +194,17 @@ TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 	EXPECT_FALSE(Input::is_mouse_pressed(MouseButton::Left));
 	EXPECT_EQ(Input::get_mouse_scroll(), 0.0f);
 	EXPECT_EQ(Input::get_typed_text(), "");
+}
+
+// GLFW only runs while a window is open. Without one, Input must not call it: GLFW would report an
+// error. (glfwGetError() works without GLFW running, and returns the last error, if any.)
+TEST(InputWithoutAWindow, ReadsNothingAndCallsNoGlfw) {
+	glfwGetError(nullptr); // Forget any earlier error
+
+	EXPECT_FALSE(Input::is_key_repeated(Key::Space));
+	EXPECT_EQ(Input::get_typed_text(), "");
+	EXPECT_EQ(Input::get_clipboard_text(), "");
+	Input::set_clipboard_text("ignored");
+
+	EXPECT_EQ(glfwGetError(nullptr), GLFW_NO_ERROR);
 }

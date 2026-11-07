@@ -57,6 +57,11 @@ namespace modulus::platform {
 		// character. It follows the keyboard layout, Shift and accent keys, and a held key types again
 		// each time it repeats. Enter, Backspace, Tab and Escape aren't text: read them as keys.
 		static std::string get_typed_text();
+
+		// The clipboard, for copying and pasting text (e.g. Ctrl+V into a name field). Read it only when
+		// pasting, not every frame: on Linux, reading it means asking the program that holds it.
+		static std::string get_clipboard_text();                 // "" if it holds no text (e.g. a picture)
+		static void set_clipboard_text(const std::string& text); // Puts a copy of the text on it
 	};
 
 } // namespace modulus::platform

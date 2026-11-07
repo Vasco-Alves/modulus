@@ -26,4 +26,7 @@ namespace modulus::platform {
 	// The text typed during the current frame, as UTF-8.
 	// Filled by the character callback, cleared at the start of every frame.
 	extern std::string g_typed_text;
+
+	// Logs an error from GLFW. It's GLFW's error callback (platform_glfw.cpp).
+	void log_glfw_error(int error, const char* description);
 }

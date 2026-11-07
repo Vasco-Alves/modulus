@@ -181,4 +181,29 @@ namespace modulus::platform {
 		return g_typed_text;
 	}
 
+	// GLFW reports a clipboard without text (empty, or holding a picture) as an error. When pasting,
+	// that's normal (there's just nothing to paste), so while the clipboard is read only other errors
+	// are logged. (Not always: GLFW also uses this error for windows it can't create.)
+	static void log_glfw_errors_but_missing_text(int error, const char* description) {
+		if (error != GLFW_FORMAT_UNAVAILABLE)
+			log_glfw_error(error, description);
+	}
+
+	std::string Input::get_clipboard_text() {
+		if (!g_main_window_handle) // GLFW only runs while a window is open
+			return "";
+
+		GLFWerrorfun usual_callback = glfwSetErrorCallback(log_glfw_errors_but_missing_text);
+		const char* text = glfwGetClipboardString(g_main_window_handle);
+		glfwSetErrorCallback(usual_callback);
+
+		// The text belongs to GLFW, and only until the next clipboard call, so return a copy
+		return text ? text : "";
+	}
+
+	void Input::set_clipboard_text(const std::string& text) {
+		if (g_main_window_handle)
+			glfwSetClipboardString(g_main_window_handle, text.c_str()); // GLFW keeps its own copy
+	}
+
 } // namespace modulus::platform
