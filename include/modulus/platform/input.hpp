@@ -54,12 +54,24 @@ namespace modulus::platform {
 		// The buttons on the top edge: LB and RB on Xbox, L1 and R1 on PlayStation, L and R on Nintendo
 		LeftBumper, RightBumper,
 
+		// The triggers behind them (LT and RT, L2 and R2, ZL and ZR), used as buttons: down once pulled
+		// more than halfway, and up again once let go to 40% or less. get_gamepad_trigger() says how far.
+		LeftTrigger, RightTrigger,
+
 		// Pushing a stick in until it clicks (L3 and R3)
 		LeftStickClick, RightStickClick,
 
 		// The two small buttons in the middle
 		Back,  // View on Xbox, Share or Create on PlayStation, - on Nintendo
 		Start, // Menu on Xbox, Options on PlayStation, + on Nintendo
+	};
+
+	enum class GamepadStick {
+		Left, Right
+	};
+
+	enum class GamepadTrigger {
+		Left, Right
 	};
 
 	// The Interface for checking input state. It reads from the first window created (the main
@@ -100,12 +112,22 @@ namespace modulus::platform {
 		// Leave out the gamepad number and every gamepad counts: right for one player, who can pick up
 		// any of them. For several players, pass each one's number (0 to 15): a gamepad gets the lowest
 		// number not in use when it's plugged in (the log says which) and keeps it until it's unplugged.
-		// A number without a gamepad reads as untouched (nothing down).
+		// A number without a gamepad reads as untouched (nothing down, sticks and triggers at 0).
 		static constexpr int any_gamepad = -1;
 
 		static bool is_gamepad_connected(int gamepad = any_gamepad);
 		static bool is_gamepad_down(GamepadButton button, int gamepad = any_gamepad);    // True every frame while the button is held
 		static bool is_gamepad_pressed(GamepadButton button, int gamepad = any_gamepad); // True only in the frame the button went down
+
+		// How far a stick is pushed: x from -1 (left) to 1 (right) and y from -1 (up) to 1 (down), the
+		// same way round as window positions. Exactly (0, 0) when let go (sticks never rest exactly in
+		// the middle, so a small push counts as none), and never longer than 1, so diagonals aren't
+		// faster. With several gamepads: the stick that's pushed the most.
+		static std::pair<float, float> get_gamepad_stick(GamepadStick stick, int gamepad = any_gamepad);
+
+		// How far a trigger is pulled: from 0 (let go) to 1 (all the way), only 0 or 1 on gamepads whose
+		// triggers are plain buttons. With several gamepads: the one pulled the most.
+		static float get_gamepad_trigger(GamepadTrigger trigger, int gamepad = any_gamepad);
 	};
 
 } // namespace modulus::platform
