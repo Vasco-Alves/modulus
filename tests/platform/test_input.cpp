@@ -222,5 +222,11 @@ TEST(InputWithoutAWindow, ReadsNothingAndCallsNoGlfw) {
 	std::string errors = testing::internal::GetCapturedStderr();
 	EXPECT_EQ(errors.find("[ERROR]"), std::string::npos) << errors;
 
+	EXPECT_FALSE(Input::is_gamepad_connected());
+	EXPECT_FALSE(Input::is_gamepad_down(GamepadButton::South));
+	EXPECT_FALSE(Input::is_gamepad_pressed(GamepadButton::South));
+	EXPECT_EQ(Input::get_gamepad_stick(GamepadStick::Left), std::make_pair(0.0f, 0.0f));
+	EXPECT_EQ(Input::get_gamepad_trigger(GamepadTrigger::Left), 0.0f);
+
 	EXPECT_EQ(glfwGetError(nullptr), GLFW_NO_ERROR);
 }

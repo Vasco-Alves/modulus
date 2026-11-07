@@ -75,7 +75,14 @@ namespace modulus::platform {
 			g_mouse_buttons_pressed[button] = true;
 	}
 
+	// GLFW calls this when the main window gets or loses the keyboard focus
+	static void focus_callback(GLFWwindow* /*window*/, int focused) {
+		g_main_window_focused = focused == GLFW_TRUE;
+	}
+
 	GLFWwindow* g_main_window_handle = nullptr;
+
+	bool g_main_window_focused = false;
 
 	float g_scroll_delta_y = 0.0f;
 
@@ -116,6 +123,10 @@ namespace modulus::platform {
 		}
 
 		MOD_INFO("Platform initialized (Backend: GLFW)");
+
+		// Say in the log which joysticks Input can't use as gamepads. (Stopping GLFW forgets its
+		// joystick callback, so this runs every time GLFW starts.)
+		watch_for_unknown_joysticks();
 		return true;
 	}
 
@@ -182,6 +193,11 @@ namespace modulus::platform {
 				glfwSetKeyCallback(m_handle, key_callback);
 				glfwSetCharCallback(m_handle, char_callback);
 				glfwSetMouseButtonCallback(m_handle, mouse_button_callback);
+				glfwSetWindowFocusCallback(m_handle, focus_callback);
+
+				// It may have the focus already: on Windows a visible window gets it while it's being
+				// created, before the callback above existed
+				g_main_window_focused = glfwGetWindowAttrib(m_handle, GLFW_FOCUSED) == GLFW_TRUE;
 			}
 
 			// Associate this class instance with the raw GLFW window,
@@ -207,7 +223,9 @@ namespace modulus::platform {
 			// Input reads nothing without a main window, and the next one starts afresh
 			if (g_main_window_handle == m_handle) {
 				g_main_window_handle = nullptr;
+				g_main_window_focused = false;
 				clear_frame_input();
+				forget_gamepads();
 			}
 
 			glfwDestroyWindow(m_handle);
@@ -229,11 +247,20 @@ namespace modulus::platform {
 				m_frame_time = std::chrono::duration<float>(now - *m_last_update).count();
 			m_last_update = now;
 
+			const bool is_main_window = m_handle == g_main_window_handle;
+
 			// A new frame starts: forget the main window's scroll, key presses and repeats, clicks and typing from last frame
-			if (m_handle == g_main_window_handle)
+			if (is_main_window)
 				clear_frame_input();
 
-			glfwPollEvents();		// Process OS events (keyboard, typing, mouse, window resize)
+			// Process OS events (keyboard, typing, mouse, window resize, joysticks plugged in or out)
+			glfwPollEvents();
+
+			// Gamepad buttons and sticks send no events, so read them all now, once: every Input function
+			// then sees the same buttons for the whole frame. (After glfwPollEvents(), which is when GLFW
+			// hears about gamepads being plugged in or out.)
+			if (is_main_window)
+				update_gamepads(read_joysticks());
 
 			return !glfwWindowShouldClose(m_handle);
 		}
