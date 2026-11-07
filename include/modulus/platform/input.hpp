@@ -33,11 +33,17 @@ namespace modulus::platform {
 		Left, Right, Middle
 	};
 
-	// The Interface for checking input state (reads from the first window created)
+	// The Interface for checking input state (reads from the first window created, and changes once
+	// per frame, when that window's update() is called)
 	// Note: We make these static functions for easy access: Input::is_key_down(...)
 	struct Input {
 		static bool is_key_down(Key key);     // True every frame while the key is held (e.g. movement)
 		static bool is_key_pressed(Key key);  // True only in the frame the key went down (e.g. jump)
+
+		// True in the frame the key went down, and again in each frame where the held key repeats, as
+		// set in the keyboard settings (e.g. Backspace in a text field). Several repeats in one frame count once.
+		static bool is_key_repeated(Key key);
+
 		static bool is_mouse_down(MouseButton button);    // True every frame while the button is held (e.g. dragging)
 		static bool is_mouse_pressed(MouseButton button); // True only in the frame the button went down (e.g. clicking)
 

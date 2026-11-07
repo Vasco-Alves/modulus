@@ -34,12 +34,15 @@ namespace {
 			handle = window ? static_cast<GLFWwindow*>(window->get_native_handle()) : nullptr;
 		}
 
-		void press_key(int glfw_key) {
+		void send_key(int glfw_key, int action) {
 			GLFWkeyfun handler = glfwSetKeyCallback(handle, nullptr);
 			glfwSetKeyCallback(handle, handler);
 			ASSERT_NE(handler, nullptr);
-			handler(handle, glfw_key, 0, GLFW_PRESS, 0);
+			handler(handle, glfw_key, 0, action, 0);
 		}
+
+		void press_key(int glfw_key) { send_key(glfw_key, GLFW_PRESS); }
+		void repeat_key(int glfw_key) { send_key(glfw_key, GLFW_REPEAT); } // What GLFW sends while a key is held
 
 		void click(int glfw_button) {
 			GLFWmousebuttonfun handler = glfwSetMouseButtonCallback(handle, nullptr);
@@ -68,6 +71,21 @@ TEST_F(InputTest, KeyPressLastsOneFrame) {
 
 	window->update(); // The next frame
 	EXPECT_FALSE(Input::is_key_pressed(Key::Space));
+}
+
+TEST_F(InputTest, HeldKeyRepeats) {
+	press_key(GLFW_KEY_BACKSPACE);
+	EXPECT_TRUE(Input::is_key_pressed(Key::Backspace));
+	EXPECT_TRUE(Input::is_key_repeated(Key::Backspace)); // Going down counts too
+	EXPECT_FALSE(Input::is_key_repeated(Key::Enter));
+
+	window->update();
+	repeat_key(GLFW_KEY_BACKSPACE); // Held long enough to repeat
+	EXPECT_TRUE(Input::is_key_repeated(Key::Backspace));
+	EXPECT_FALSE(Input::is_key_pressed(Key::Backspace)); // It didn't go down again
+
+	window->update(); // A frame without a repeat
+	EXPECT_FALSE(Input::is_key_repeated(Key::Backspace));
 }
 
 TEST_F(InputTest, ModifierAndNavigationKeys) {
@@ -101,6 +119,7 @@ TEST_F(InputTest, ScrollAddsUpWithinAFrame) {
 
 TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 	press_key(GLFW_KEY_SPACE);
+	repeat_key(GLFW_KEY_BACKSPACE);
 	click(GLFW_MOUSE_BUTTON_LEFT);
 	scroll(1.0);
 
@@ -111,6 +130,7 @@ TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 
 	// Nothing has happened in it yet, even before its first update()
 	EXPECT_FALSE(Input::is_key_pressed(Key::Space));
+	EXPECT_FALSE(Input::is_key_repeated(Key::Backspace));
 	EXPECT_FALSE(Input::is_mouse_pressed(MouseButton::Left));
 	EXPECT_EQ(Input::get_mouse_scroll(), 0.0f);
 }

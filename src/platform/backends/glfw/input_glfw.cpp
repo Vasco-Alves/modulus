@@ -124,6 +124,18 @@ namespace modulus::platform {
 		return g_keys_pressed[glfw_key];
 	}
 
+	bool Input::is_key_repeated(Key key) {
+		if (!g_main_window_handle)
+			return false;
+
+		int glfw_key = to_glfw_key(key);
+		if (glfw_key == GLFW_KEY_UNKNOWN)
+			return false;
+
+		// Filled by the key callback in platform_glfw.cpp
+		return g_keys_repeated[glfw_key];
+	}
+
 	bool Input::is_mouse_down(MouseButton button) {
 		if (!g_main_window_handle)
 			return false;

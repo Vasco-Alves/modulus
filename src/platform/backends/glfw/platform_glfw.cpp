@@ -24,10 +24,16 @@ namespace modulus::platform {
 	}
 
 	static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) {
-		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT instead,
-		// so this only records real presses. (Unknown keys are -1, so we skip those.)
-		if (action == GLFW_PRESS && key >= 0)
+		// Unknown keys are -1, so we skip those
+		if (key < 0)
+			return;
+
+		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT again and again
+		// (after a short wait, as fast as the keyboard settings say): those count as repeated, not pressed.
+		if (action == GLFW_PRESS)
 			g_keys_pressed[key] = true;
+		if (action == GLFW_PRESS || action == GLFW_REPEAT)
+			g_keys_repeated[key] = true;
 	}
 
 	static void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/) {
@@ -42,15 +48,19 @@ namespace modulus::platform {
 
 	bool g_keys_pressed[GLFW_KEY_LAST + 1] = {};
 
+	bool g_keys_repeated[GLFW_KEY_LAST + 1] = {};
+
 	bool g_mouse_buttons_pressed[GLFW_MOUSE_BUTTON_LAST + 1] = {};
 
-	// Forgets the main window's input from the last frame: scroll, key presses and clicks. Done when
-	// a frame starts, and when the main window closes (so the next main window starts with nothing
-	// pressed, even before its first update()).
+	// Forgets the main window's input from the last frame: scroll, key presses and repeats, and
+	// clicks. Done when a frame starts, and when the main window closes (so the next main window
+	// starts with nothing pressed, even before its first update()).
 	static void clear_frame_input() {
 		g_scroll_delta_y = 0.0f;
 		for (bool& pressed : g_keys_pressed)
 			pressed = false;
+		for (bool& repeated : g_keys_repeated)
+			repeated = false;
 		for (bool& pressed : g_mouse_buttons_pressed)
 			pressed = false;
 	}
@@ -182,7 +192,7 @@ namespace modulus::platform {
 				m_frame_time = std::chrono::duration<float>(now - *m_last_update).count();
 			m_last_update = now;
 
-			// A new frame starts: forget the main window's scroll, key presses and clicks from last frame
+			// A new frame starts: forget the main window's scroll, key presses and repeats, and clicks from last frame
 			if (m_handle == g_main_window_handle)
 				clear_frame_input();
 
