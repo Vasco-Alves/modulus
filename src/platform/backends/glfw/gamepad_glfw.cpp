@@ -210,6 +210,14 @@ namespace modulus::platform {
 		return std::span<const Gamepad>(s_gamepads).subspan(size_t(gamepad), 1);
 	}
 
+	// The same, but only while the main window has the focus: like the keyboard, gamepads are for the
+	// window you're using. (In the background they stay connected, but read as untouched.)
+	static std::span<const Gamepad> find_gamepads_in_use(int gamepad) {
+		if (!g_main_window_focused)
+			return {};
+		return find_gamepads(gamepad);
+	}
+
 	// A button's place in Gamepad::down (-1 for a value that isn't a GamepadButton, only possible with a cast)
 	static int button_index(GamepadButton button) {
 		int index = int(button);
@@ -229,7 +237,7 @@ namespace modulus::platform {
 		if (i < 0)
 			return false;
 
-		for (const Gamepad& pad : find_gamepads(gamepad)) {
+		for (const Gamepad& pad : find_gamepads_in_use(gamepad)) {
 			if (pad.down[i])
 				return true;
 		}
@@ -242,7 +250,7 @@ namespace modulus::platform {
 			return false;
 
 		// Gamepads send no events, so "went down" means: down this frame, but not last frame
-		for (const Gamepad& pad : find_gamepads(gamepad)) {
+		for (const Gamepad& pad : find_gamepads_in_use(gamepad)) {
 			if (pad.down[i] && !pad.was_down[i])
 				return true;
 		}
@@ -257,7 +265,7 @@ namespace modulus::platform {
 		// With several gamepads, the stick that's pushed the most
 		std::pair<float, float> position = { 0.0f, 0.0f };
 		float longest = 0.0f;
-		for (const Gamepad& pad : find_gamepads(gamepad)) {
+		for (const Gamepad& pad : find_gamepads_in_use(gamepad)) {
 			auto [x, y] = stick_position(pad.reading.axes[x_axis], pad.reading.axes[y_axis]);
 			float length = std::sqrt(x * x + y * y);
 			if (length > longest) {
@@ -273,7 +281,7 @@ namespace modulus::platform {
 
 		// With several gamepads, the trigger that's pulled the most
 		float most = 0.0f;
-		for (const Gamepad& pad : find_gamepads(gamepad))
+		for (const Gamepad& pad : find_gamepads_in_use(gamepad))
 			most = std::max(most, trigger_amount(pad.reading.axes[axis]));
 		return most;
 	}

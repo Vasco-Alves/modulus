@@ -31,8 +31,13 @@ namespace {
 
 	class GamepadTest : public ::testing::Test {
 	protected:
+		void SetUp() override {
+			g_main_window_focused = true; // There's no window to say it has the focus, so say it for it
+		}
+
 		void TearDown() override {
 			forget_gamepads(); // The next test starts with none
+			g_main_window_focused = false;
 		}
 
 		// One frame, as the main window's update() would run it, with the made-up joysticks
@@ -378,6 +383,35 @@ TEST_F(GamepadTest, TriggersAreButtonsPastHalfway) {
 	}
 }
 
+TEST_F(GamepadTest, GamepadsReadAsUntouchedInTheBackground) {
+	plug_in(0);
+	next_frame();
+	hold(0, GLFW_GAMEPAD_BUTTON_A);
+	move(0, GLFW_GAMEPAD_AXIS_LEFT_X, 1.0f);
+	move(0, GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER, 1.0f);
+	next_frame();
+
+	g_main_window_focused = false; // Another window gets the focus
+	EXPECT_TRUE(Input::is_gamepad_connected());
+	EXPECT_TRUE(Input::is_gamepad_connected(0));
+	EXPECT_FALSE(Input::is_gamepad_down(GamepadButton::South));
+	EXPECT_FALSE(Input::is_gamepad_pressed(GamepadButton::South));
+	EXPECT_EQ(Input::get_gamepad_stick(GamepadStick::Left), std::make_pair(0.0f, 0.0f));
+	EXPECT_EQ(Input::get_gamepad_trigger(GamepadTrigger::Right), 0.0f);
+
+	hold(0, GLFW_GAMEPAD_BUTTON_B); // Pressed in the background
+	next_frame();
+	EXPECT_FALSE(Input::is_gamepad_down(GamepadButton::East));
+	EXPECT_FALSE(Input::is_gamepad_pressed(GamepadButton::East));
+
+	g_main_window_focused = true; // Back to our window, with A and B still held
+	next_frame();
+	EXPECT_TRUE(Input::is_gamepad_down(GamepadButton::South));
+	EXPECT_TRUE(Input::is_gamepad_down(GamepadButton::East));
+	EXPECT_FALSE(Input::is_gamepad_pressed(GamepadButton::South)); // Neither went down while we were looking
+	EXPECT_FALSE(Input::is_gamepad_pressed(GamepadButton::East));
+}
+
 // ---- The real wiring, with a hidden window ----
 
 TEST(GamepadWindow, ReadingEveryJoystickRaisesNoGlfwErrors) {
@@ -403,4 +437,32 @@ TEST(GamepadWindow, ClosingTheMainWindowForgetsGamepads) {
 
 	window.reset();
 	EXPECT_FALSE(Input::is_gamepad_connected());
+	EXPECT_FALSE(g_main_window_focused);
+}
+
+TEST(GamepadWindow, OnlyTheFocusedMainWindowGetsGamepads) {
+	auto window = create_hidden_window();
+	if (!window)
+		GTEST_SKIP() << "Can't create a window here (no display?)";
+
+	// Modulus' focus handler: setting a callback returns the previous one (as in test_input.cpp)
+	auto* handle = static_cast<GLFWwindow*>(window->get_native_handle());
+	GLFWwindowfocusfun handler = glfwSetWindowFocusCallback(handle, nullptr);
+	glfwSetWindowFocusCallback(handle, handler);
+	ASSERT_NE(handler, nullptr);
+
+	EXPECT_FALSE(g_main_window_focused); // A hidden window never has the focus
+
+	JoystickReadings joysticks = {};
+	joysticks[0] = untouched_gamepad();
+	joysticks[0].state.buttons[GLFW_GAMEPAD_BUTTON_A] = GLFW_PRESS;
+	update_gamepads(joysticks); // As the window's update() would, with a made-up gamepad
+	EXPECT_TRUE(Input::is_gamepad_connected());
+	EXPECT_FALSE(Input::is_gamepad_down(GamepadButton::South));
+
+	handler(handle, GLFW_TRUE); // What GLFW does when the window gets the focus
+	EXPECT_TRUE(Input::is_gamepad_down(GamepadButton::South));
+
+	handler(handle, GLFW_FALSE); // ...and when it loses it
+	EXPECT_FALSE(Input::is_gamepad_down(GamepadButton::South));
 }

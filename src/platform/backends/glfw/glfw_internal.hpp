@@ -9,7 +9,11 @@ namespace modulus::platform {
 	// A global pointer to the main window handle.
 	// Defined in platform_glfw.cpp, used in input_glfw.cpp
 	extern GLFWwindow* g_main_window_handle;
-	
+
+	// Whether the main window has the keyboard focus. Gamepads read as untouched while it doesn't.
+	// Kept up to date by the main window's focus callback (platform_glfw.cpp).
+	extern bool g_main_window_focused;
+
 	// Global scroll accumulator
 	extern float g_scroll_delta_y;
 

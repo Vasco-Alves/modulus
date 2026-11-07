@@ -112,7 +112,8 @@ namespace modulus::platform {
 		// Leave out the gamepad number and every gamepad counts: right for one player, who can pick up
 		// any of them. For several players, pass each one's number (0 to 15): a gamepad gets the lowest
 		// number not in use when it's plugged in (the log says which) and keeps it until it's unplugged.
-		// A number without a gamepad reads as untouched (nothing down, sticks and triggers at 0).
+		// A number without a gamepad reads as untouched (nothing down, sticks and triggers at 0), and so
+		// does every gamepad while the window doesn't have the focus, like the keyboard.
 		static constexpr int any_gamepad = -1;
 
 		static bool is_gamepad_connected(int gamepad = any_gamepad);

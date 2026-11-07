@@ -75,7 +75,14 @@ namespace modulus::platform {
 			g_mouse_buttons_pressed[button] = true;
 	}
 
+	// GLFW calls this when the main window gets or loses the keyboard focus
+	static void focus_callback(GLFWwindow* /*window*/, int focused) {
+		g_main_window_focused = focused == GLFW_TRUE;
+	}
+
 	GLFWwindow* g_main_window_handle = nullptr;
+
+	bool g_main_window_focused = false;
 
 	float g_scroll_delta_y = 0.0f;
 
@@ -182,6 +189,11 @@ namespace modulus::platform {
 				glfwSetKeyCallback(m_handle, key_callback);
 				glfwSetCharCallback(m_handle, char_callback);
 				glfwSetMouseButtonCallback(m_handle, mouse_button_callback);
+				glfwSetWindowFocusCallback(m_handle, focus_callback);
+
+				// It may have the focus already: on Windows a visible window gets it while it's being
+				// created, before the callback above existed
+				g_main_window_focused = glfwGetWindowAttrib(m_handle, GLFW_FOCUSED) == GLFW_TRUE;
 			}
 
 			// Associate this class instance with the raw GLFW window,
@@ -207,6 +219,7 @@ namespace modulus::platform {
 			// Input reads nothing without a main window, and the next one starts afresh
 			if (g_main_window_handle == m_handle) {
 				g_main_window_handle = nullptr;
+				g_main_window_focused = false;
 				clear_frame_input();
 				forget_gamepads();
 			}
