@@ -1,7 +1,8 @@
 // Hello Sprites: a little pixel-art game with sprite sheets, animations and a sound.
 //   Walk with the arrow keys, WASD, or a gamepad (left stick or d-pad), and collect the spinning coins.
 //   Push the stick only a little to walk slowly.
-//   Found them all? Enter, or A on a gamepad (Cross on PlayStation), plays again.
+//   Found them all? Enter, or the bottom button of a gamepad (A on Xbox, Cross on PlayStation,
+//   B on Nintendo), plays again.
 //   Resize the window: the game stays sharp, scaled by whole numbers.
 //   Escape: quit.
 //
@@ -186,10 +187,12 @@ int main() {
 		if (direction.x != 0.0f || direction.y != 0.0f)
 			direction = glm::normalize(direction); // So walking diagonally isn't faster
 
-		// Or with the left stick. Its y points down, like the game's, and it's never longer than 1,
-		// so it can be used as it is: pushed only a little, it walks slowly.
+		// Or with the left stick, when the keys and d-pad add up to no direction (none held, or only
+		// opposite ones, which cancel out), so a stick that doesn't quite rest in the middle can't stop
+		// the keys from walking. Its y points down, like the game's, and it's never longer than 1, so
+		// it can be used as it is: pushed only a little, it walks slowly.
 		auto [stick_x, stick_y] = Input::get_gamepad_stick(GamepadStick::Left);
-		if (stick_x != 0.0f || stick_y != 0.0f)
+		if (direction.x == 0.0f && direction.y == 0.0f)
 			direction = { stick_x, stick_y };
 
 		player += direction * 60.0f * seconds; // Game pixels per second
@@ -211,8 +214,9 @@ int main() {
 			}
 		}
 
-		// All found: Enter, or the bottom button of a gamepad (A on Xbox, Cross on PlayStation), puts
-		// the coins back for another round, and the player back at the start (not on the last coin)
+		// All found: Enter, or the bottom button of a gamepad (A on Xbox, Cross on PlayStation, B on
+		// Nintendo), puts the coins back for another round, and the player back at the start (not on
+		// the last coin)
 		bool all_found = collected == int(coins.size());
 		if (all_found && (Input::is_key_pressed(Key::Enter) || Input::is_gamepad_pressed(GamepadButton::South))) {
 			for (Coin& coin : coins)
@@ -253,8 +257,8 @@ int main() {
 			const gfx::DrawOptions centered = { .origin = { 0.5f, 0.5f } };
 			renderer->draw_text({ 162.0f, 82.0f }, "You found them all!", 20.0f, shadow, centered);
 			renderer->draw_text({ 160.0f, 80.0f }, "You found them all!", 20.0f, white, centered);
-			renderer->draw_text({ 161.0f, 101.0f }, "Enter or A: play again", 10.0f, shadow, centered);
-			renderer->draw_text({ 160.0f, 100.0f }, "Enter or A: play again", 10.0f, white, centered);
+			renderer->draw_text({ 161.0f, 101.0f }, "Enter or the bottom button: play again", 10.0f, shadow, centered);
+			renderer->draw_text({ 160.0f, 100.0f }, "Enter or the bottom button: play again", 10.0f, white, centered);
 		}
 
 		renderer->end();
