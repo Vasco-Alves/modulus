@@ -34,8 +34,12 @@ namespace modulus::platform {
 		Left, Right, Middle
 	};
 
-	// The Interface for checking input state (reads from the first window created, and changes once
-	// per frame, when that window's update() is called)
+	// The Interface for checking input state. It reads from the first window created (the main
+	// window): keys, mouse buttons, scroll and typing change once per frame, when that window's
+	// update() is called, while the mouse position and the clipboard are read the moment you ask.
+	// With several windows, update the others right after the main one, before reading Input: every
+	// update() collects the events of all windows, and the main window's next update() forgets the
+	// presses and typing collected since its last one.
 	// Note: We make these static functions for easy access: Input::is_key_down(...)
 	struct Input {
 		static bool is_key_down(Key key);     // True every frame while the key is held (e.g. movement)

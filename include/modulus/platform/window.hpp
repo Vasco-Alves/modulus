@@ -27,7 +27,7 @@ namespace modulus::platform {
 		virtual ~IWindow() = default;
 
 		// Core loop functions
-		virtual bool update() = 0;       // Polls events. Returns false if window should close.
+		virtual bool update() = 0;       // Polls events (of all windows: see Input). Returns false if window should close.
 		virtual void close() = 0;        // Manually signal close
 
 		// How long the last frame took, in seconds: the time between the last two update() calls

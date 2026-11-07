@@ -170,7 +170,7 @@ renderer->end();
 
 ### Reading Input
 
-`Input` answers questions about the keyboard, the mouse and typing. The answers change once per frame, in the main (first) window's `update()`:
+`Input` answers questions about the keyboard, the mouse and typing. The answers change once per frame, in the main (first) window's `update()` (only the mouse position is read the moment you ask):
 
 ```cpp
 using modulus::platform::Input;

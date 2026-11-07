@@ -70,7 +70,7 @@ namespace modulus::platform {
 	}
 
 	static void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/) {
-		// Like key_callback: only record the moment a button goes down
+		// Like g_keys_pressed in key_callback: only record the moment a button goes down (mouse buttons don't repeat)
 		if (action == GLFW_PRESS && button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST)
 			g_mouse_buttons_pressed[button] = true;
 	}
