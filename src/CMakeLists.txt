@@ -24,6 +24,7 @@ if(MODULUS_BUILD_PLATFORM)
     add_library(modulus_platform STATIC
         "platform/backends/glfw/platform_glfw.cpp"
         "platform/backends/glfw/input_glfw.cpp"
+        "platform/backends/glfw/gamepad_glfw.cpp"
     )
     add_library(modulus::platform ALIAS modulus_platform)
 

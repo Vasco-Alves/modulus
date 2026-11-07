@@ -36,12 +36,17 @@ add_executable(modulus_tests
 
 if(MODULUS_BUILD_PLATFORM)
     target_sources(modulus_tests PRIVATE
+        platform/test_gamepad.cpp # Made-up gamepads (nobody can plug one into CI). Most need no window.
         platform/test_input.cpp   # Opens a hidden window. Skips itself without a display.
         platform/test_window.cpp  # The same
     )
 
     # The platform tests talk to GLFW directly, to send the window fake input events
     target_link_libraries(modulus_tests PRIVATE glfw)
+
+    # The gamepad tests hand Modulus' GLFW backend made-up gamepads, through its private header
+    # (#include "platform/backends/glfw/glfw_internal.hpp")
+    target_include_directories(modulus_tests PRIVATE "${PROJECT_SOURCE_DIR}/src")
 endif()
 
 if(MODULUS_BUILD_GFX)

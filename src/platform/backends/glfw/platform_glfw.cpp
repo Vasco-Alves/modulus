@@ -208,6 +208,7 @@ namespace modulus::platform {
 			if (g_main_window_handle == m_handle) {
 				g_main_window_handle = nullptr;
 				clear_frame_input();
+				forget_gamepads();
 			}
 
 			glfwDestroyWindow(m_handle);
@@ -229,11 +230,20 @@ namespace modulus::platform {
 				m_frame_time = std::chrono::duration<float>(now - *m_last_update).count();
 			m_last_update = now;
 
+			const bool is_main_window = m_handle == g_main_window_handle;
+
 			// A new frame starts: forget the main window's scroll, key presses and repeats, clicks and typing from last frame
-			if (m_handle == g_main_window_handle)
+			if (is_main_window)
 				clear_frame_input();
 
-			glfwPollEvents();		// Process OS events (keyboard, typing, mouse, window resize)
+			// Process OS events (keyboard, typing, mouse, window resize, joysticks plugged in or out)
+			glfwPollEvents();
+
+			// Gamepads send no events, so read them all now, once: every Input function then sees the
+			// same buttons for the whole frame. (After glfwPollEvents(), which is when GLFW hears about
+			// gamepads being plugged in or out.)
+			if (is_main_window)
+				update_gamepads(read_joysticks());
 
 			return !glfwWindowShouldClose(m_handle);
 		}
