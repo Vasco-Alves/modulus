@@ -17,16 +17,21 @@ namespace {
 	class InputTest : public ::testing::Test {
 	protected:
 		void SetUp() override {
+			open_window();
+			if (!window)
+				GTEST_SKIP() << "Can't create a window here (no display?)";
+
+			window->update(); // Start a frame
+		}
+
+		// Opens a hidden window. With no other window open, it's the main window, which Input reads.
+		void open_window() {
 			WindowConfig config;
 			config.title = "modulus_tests";
 			config.visible = false;
 
 			window = create_window(config);
-			if (!window)
-				GTEST_SKIP() << "Can't create a window here (no display?)";
-
-			handle = static_cast<GLFWwindow*>(window->get_native_handle());
-			window->update(); // Start a frame
+			handle = window ? static_cast<GLFWwindow*>(window->get_native_handle()) : nullptr;
 		}
 
 		void press_key(int glfw_key) {
@@ -92,4 +97,20 @@ TEST_F(InputTest, ScrollAddsUpWithinAFrame) {
 
 	window->update();
 	EXPECT_FLOAT_EQ(Input::get_mouse_scroll(), 0.0f);
+}
+
+TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
+	press_key(GLFW_KEY_SPACE);
+	click(GLFW_MOUSE_BUTTON_LEFT);
+	scroll(1.0);
+
+	// Close the main window, then open another one, which becomes the new main window
+	window.reset();
+	open_window();
+	ASSERT_NE(window, nullptr);
+
+	// Nothing has happened in it yet, even before its first update()
+	EXPECT_FALSE(Input::is_key_pressed(Key::Space));
+	EXPECT_FALSE(Input::is_mouse_pressed(MouseButton::Left));
+	EXPECT_EQ(Input::get_mouse_scroll(), 0.0f);
 }

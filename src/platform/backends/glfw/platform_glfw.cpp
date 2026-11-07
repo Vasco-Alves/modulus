@@ -44,6 +44,17 @@ namespace modulus::platform {
 
 	bool g_mouse_buttons_pressed[GLFW_MOUSE_BUTTON_LAST + 1] = {};
 
+	// Forgets the main window's input from the last frame: scroll, key presses and clicks. Done when
+	// a frame starts, and when the main window closes (so the next main window starts with nothing
+	// pressed, even before its first update()).
+	static void clear_frame_input() {
+		g_scroll_delta_y = 0.0f;
+		for (bool& pressed : g_keys_pressed)
+			pressed = false;
+		for (bool& pressed : g_mouse_buttons_pressed)
+			pressed = false;
+	}
+
 	// How many windows are open right now.
 	// GLFW starts when the first window opens and stops when the last one closes,
 	// so users never have to start or stop the platform module themselves.
@@ -146,8 +157,10 @@ namespace modulus::platform {
 			if (!m_handle)
 				return;
 
+			// Input reads nothing without a main window, and the next one starts afresh
 			if (g_main_window_handle == m_handle) {
 				g_main_window_handle = nullptr;
+				clear_frame_input();
 			}
 
 			glfwDestroyWindow(m_handle);
@@ -170,13 +183,8 @@ namespace modulus::platform {
 			m_last_update = now;
 
 			// A new frame starts: forget the main window's scroll, key presses and clicks from last frame
-			if (m_handle == g_main_window_handle) {
-				g_scroll_delta_y = 0.0f;
-				for (bool& pressed : g_keys_pressed)
-					pressed = false;
-				for (bool& pressed : g_mouse_buttons_pressed)
-					pressed = false;
-			}
+			if (m_handle == g_main_window_handle)
+				clear_frame_input();
 
 			glfwPollEvents();		// Process OS events (keyboard, mouse, window resize)
 
