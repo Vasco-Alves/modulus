@@ -19,7 +19,7 @@ Instead of spending the start of every project gluing libraries together (window
 | Module   | CMake target        | What it does                              | Built on                          |
 | -------- | ------------------- | ----------------------------------------- | --------------------------------- |
 | Core     | `modulus::core`     | Logging, files and asset paths, timer     | No external libraries             |
-| Platform | `modulus::platform` | Window, keyboard and mouse input, typed text, clipboard | GLFW                |
+| Platform | `modulus::platform` | Window, keyboard, mouse and gamepad input, typed text, clipboard | GLFW       |
 | Gfx      | `modulus::gfx`      | 2D renderer and camera, shaders, buffers, textures | OpenGL 3.3 (GLAD), GLM, stb_image |
 | Audio    | `modulus::audio`    | Playing sound files                       | miniaudio                         |
 
@@ -166,11 +166,11 @@ renderer->draw_quad(fit.position, fit.size, game_screen->get_texture());
 renderer->end();
 ```
 
-[examples/hello_sprites](examples/hello_sprites/main.cpp) is a little game made this way, with a tile map, animated coins, and a sound when you collect one.
+[examples/hello_sprites](examples/hello_sprites/main.cpp) is a little game made this way, with a tile map, animated coins, a sound when you collect one, and gamepad controls.
 
 ### Reading Input
 
-`Input` answers questions about the keyboard, the mouse and typing. The answers change once per frame, in the main (first) window's `update()` (only the mouse position is read the moment you ask):
+`Input` answers questions about the keyboard, the mouse, gamepads and typing. The answers change once per frame, in the main (first) window's `update()` (only the mouse position is read the moment you ask):
 
 ```cpp
 using modulus::platform::Input;
@@ -181,6 +181,24 @@ if (Input::is_key_down(Key::Right))    // Every frame while it's held: walking
 if (Input::is_key_pressed(Key::Space)) // Only in the frame it went down: jumping
     jump();
 ```
+
+Gamepads (Xbox, PlayStation, Switch Pro and many more) work the same way. Without a gamepad number every gamepad counts, which is right for one player; for several players, pass each one's number. A gamepad keeps its number until it's unplugged, and the log says which number each one got. The four buttons on the right are named by where they are, because each brand labels them differently:
+
+```cpp
+using modulus::platform::GamepadButton;
+using modulus::platform::GamepadStick;
+
+if (Input::is_gamepad_pressed(GamepadButton::South))       // The bottom one: A on Xbox, Cross on PlayStation
+    jump();
+
+auto [x, y] = Input::get_gamepad_stick(GamepadStick::Left); // -1 to 1, y down like the window, (0, 0) when let go
+position += glm::vec2(x, y) * speed * window->get_frame_time();
+
+if (Input::is_gamepad_pressed(GamepadButton::Start, 1))     // Only gamepad number 1 (the second player's)
+    pause();
+```
+
+Like the keyboard, gamepads only count while the window has the focus. A gamepad that does nothing is usually one GLFW doesn't know: the log names it, with its GUID.
 
 For a text field, `get_typed_text()` is what was typed this frame, as UTF-8, following the keyboard layout and accent keys. Enter and Backspace are keys, not text, and `is_key_repeated()` is true again each time a held key repeats:
 

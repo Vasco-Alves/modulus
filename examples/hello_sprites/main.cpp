@@ -1,5 +1,7 @@
 // Hello Sprites: a little pixel-art game with sprite sheets, animations and a sound.
-//   Walk with the arrow keys or WASD and collect the spinning coins.
+//   Walk with the arrow keys, WASD, or a gamepad (left stick or d-pad), and collect the spinning coins.
+//   Push the stick only a little to walk slowly.
+//   Found them all? Enter, or A on a gamepad (Cross on PlayStation), plays again.
 //   Resize the window: the game stays sharp, scaled by whole numbers.
 //   Escape: quit.
 //
@@ -31,6 +33,8 @@
 #include <vector>
 
 using namespace modulus;
+using platform::GamepadButton;
+using platform::GamepadStick;
 using platform::Input;
 using platform::Key;
 
@@ -155,7 +159,8 @@ int main() {
 	if (audio_device)
 		coin_sound = audio_device->load_sound(core::File::app_path("assets/sounds/coin.wav"));
 
-	glm::vec2 player = { 160.0f, 90.0f };
+	const glm::vec2 start = { 160.0f, 90.0f };
+	glm::vec2 player = start;
 	bool facing_left = false;
 	int collected = 0;
 
@@ -167,14 +172,27 @@ int main() {
 		if (Input::is_key_pressed(Key::Escape))
 			window->close();
 
-		// Walk with the arrow keys or WASD
+		// Walk with the arrow keys, WASD or a gamepad's d-pad. (Without a gamepad number, the gamepad
+		// functions read every gamepad, so whichever one the player picks up works.)
 		glm::vec2 direction = { 0.0f, 0.0f };
 		if (Input::is_key_down(Key::Left) || Input::is_key_down(Key::A)) direction.x -= 1.0f;
 		if (Input::is_key_down(Key::Right) || Input::is_key_down(Key::D)) direction.x += 1.0f;
 		if (Input::is_key_down(Key::Up) || Input::is_key_down(Key::W)) direction.y -= 1.0f;
 		if (Input::is_key_down(Key::Down) || Input::is_key_down(Key::S)) direction.y += 1.0f;
+		if (Input::is_gamepad_down(GamepadButton::DpadLeft)) direction.x -= 1.0f;
+		if (Input::is_gamepad_down(GamepadButton::DpadRight)) direction.x += 1.0f;
+		if (Input::is_gamepad_down(GamepadButton::DpadUp)) direction.y -= 1.0f;
+		if (Input::is_gamepad_down(GamepadButton::DpadDown)) direction.y += 1.0f;
 		if (direction.x != 0.0f || direction.y != 0.0f)
-			player += glm::normalize(direction) * 60.0f * seconds; // Game pixels per second
+			direction = glm::normalize(direction); // So walking diagonally isn't faster
+
+		// Or with the left stick. Its y points down, like the game's, and it's never longer than 1,
+		// so it can be used as it is: pushed only a little, it walks slowly.
+		auto [stick_x, stick_y] = Input::get_gamepad_stick(GamepadStick::Left);
+		if (stick_x != 0.0f || stick_y != 0.0f)
+			direction = { stick_x, stick_y };
+
+		player += direction * 60.0f * seconds; // Game pixels per second
 
 		// Face the way we last walked (the sprite looks right, so flip it to look left)
 		if (direction.x < 0.0f)
@@ -191,6 +209,17 @@ int main() {
 				if (coin_sound)
 					coin_sound->play();
 			}
+		}
+
+		// All found: Enter, or the bottom button of a gamepad (A on Xbox, Cross on PlayStation), puts
+		// the coins back for another round, and the player back at the start (not on the last coin)
+		bool all_found = collected == int(coins.size());
+		if (all_found && (Input::is_key_pressed(Key::Enter) || Input::is_gamepad_pressed(GamepadButton::South))) {
+			for (Coin& coin : coins)
+				coin.collected = false;
+			collected = 0;
+			all_found = false;
+			player = start;
 		}
 
 		// Draw the game into the game screen, everything at its own size in pixels
@@ -220,10 +249,12 @@ int main() {
 		renderer->draw_text({ 5.0f, 5.0f }, score, 10.0f, shadow);
 		renderer->draw_text({ 4.0f, 4.0f }, score, 10.0f, white);
 
-		if (collected == int(coins.size())) {
+		if (all_found) {
 			const gfx::DrawOptions centered = { .origin = { 0.5f, 0.5f } };
 			renderer->draw_text({ 162.0f, 82.0f }, "You found them all!", 20.0f, shadow, centered);
 			renderer->draw_text({ 160.0f, 80.0f }, "You found them all!", 20.0f, white, centered);
+			renderer->draw_text({ 161.0f, 101.0f }, "Enter or A: play again", 10.0f, shadow, centered);
+			renderer->draw_text({ 160.0f, 100.0f }, "Enter or A: play again", 10.0f, white, centered);
 		}
 
 		renderer->end();
