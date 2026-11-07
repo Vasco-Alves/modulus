@@ -419,8 +419,9 @@ TEST(GamepadWindow, ReadingEveryJoystickRaisesNoGlfwErrors) {
 	if (!window)
 		GTEST_SKIP() << "Can't create a window here (no display?)";
 
-	glfwGetError(nullptr); // Forget anything that happened while the window was created
-	window->update();      // Asks GLFW about all 16 joysticks (and reads any real ones plugged in)
+	glfwGetError(nullptr);         // Forget anything that happened while the window was created
+	watch_for_unknown_joysticks(); // Looks at all 16 joysticks, as when GLFW starts
+	window->update();              // Reads them all (and any real ones plugged in)
 	window->update();
 	EXPECT_EQ(glfwGetError(nullptr), GLFW_NO_ERROR);
 }

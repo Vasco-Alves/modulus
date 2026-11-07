@@ -123,6 +123,10 @@ namespace modulus::platform {
 		}
 
 		MOD_INFO("Platform initialized (Backend: GLFW)");
+
+		// Say in the log which joysticks Input can't use as gamepads. (Stopping GLFW forgets its
+		// joystick callback, so this runs every time GLFW starts.)
+		watch_for_unknown_joysticks();
 		return true;
 	}
 

@@ -1,7 +1,7 @@
 // Gamepads. GLFW sends no events for them, so the main window's update() reads every joystick once
 // per frame (read_joysticks), and update_gamepads() turns what it read into the answers of Input's
-// gamepad functions. Only read_joysticks() calls GLFW, so the tests can hand update_gamepads()
-// made-up gamepads: nobody can plug a real one into CI.
+// gamepad functions. Only read_joysticks() and the logging of unknown joysticks call GLFW, so the
+// tests can hand update_gamepads() made-up gamepads: nobody can plug a real one into CI.
 
 #include <modulus/platform/input.hpp>
 #include <modulus/core/log.hpp>
@@ -149,6 +149,33 @@ namespace modulus::platform {
 		}
 
 		return joysticks;
+	}
+
+	// Says in the log that GLFW can't use a joystick as a gamepad (it doesn't know which button is
+	// which on it): the first thing to check when a gamepad does nothing.
+	// (Gamepads that work are logged by update_gamepads(), with their number.)
+	static void log_if_unknown(int jid) {
+		if (!glfwJoystickPresent(jid) || glfwJoystickIsGamepad(jid))
+			return;
+
+		const char* name = glfwGetJoystickName(jid); // Both can be NULL, which std::format must never get
+		const char* guid = glfwGetJoystickGUID(jid);
+		MOD_INFO("Joystick {0} isn't a gamepad GLFW knows, so Input ignores it: {1} (GUID {2})",
+		         jid, name ? name : "no name", guid ? guid : "none");
+	}
+
+	// GLFW calls this when a joystick is plugged in or out
+	static void joystick_callback(int jid, int event) {
+		if (event == GLFW_CONNECTED)
+			log_if_unknown(jid);
+	}
+
+	void watch_for_unknown_joysticks() {
+		glfwSetJoystickCallback(joystick_callback);
+
+		// The ones already plugged in were found while GLFW started, before the callback existed
+		for (int jid = GLFW_JOYSTICK_1; jid <= GLFW_JOYSTICK_LAST; ++jid)
+			log_if_unknown(jid);
 	}
 
 	// =========================================================================

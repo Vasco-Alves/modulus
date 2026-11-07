@@ -57,4 +57,8 @@ namespace modulus::platform {
 
 	// Forgets every gamepad. Called when the main window closes: without one, Input reads none.
 	void forget_gamepads();
+
+	// Logs every joystick GLFW can't use as a gamepad: the ones plugged in now, and from now on the
+	// ones plugged in later. Called every time GLFW starts, because stopping it forgets its callbacks.
+	void watch_for_unknown_joysticks();
 }
