@@ -298,8 +298,8 @@ TEST_F(GamepadTest, SmallStickPushesCountAsNone) {
 TEST_F(GamepadTest, StickLengthGoesFromZeroToOne) {
 	plug_in(0);
 
-	push_left_stick(0.6f, 0.0f); // Halfway between the dead zone (0.2) and full (0.95)
-	expect_stick(Input::get_gamepad_stick(GamepadStick::Left), 0.5333f, 0.0f);
+	push_left_stick(0.575f, 0.0f); // Halfway between the dead zone (0.2) and full (0.95)
+	expect_stick(Input::get_gamepad_stick(GamepadStick::Left), 0.5f, 0.0f);
 	push_left_stick(-0.3f, 0.4f); // 0.5 long: the same direction, shorter
 	expect_stick(Input::get_gamepad_stick(GamepadStick::Left), -0.24f, 0.32f);
 	push_left_stick(0.95f, 0.0f);
@@ -336,7 +336,7 @@ TEST_F(GamepadTest, TriggersGoFromZeroToOne) {
 	const Step steps[] = {
 		{  1.0f,      1.0f    }, // All the way
 		{ -0.992157f, 0.0f    }, // An Xbox trigger's first step: in the dead zone
-		{  0.5f,      0.7647f }, // Three quarters of the way, without the dead zone
+		{  0.5f,      0.7647f }, // Pulled three quarters of the way: (0.75 - 0.1) / 0.85 once the dead zone is taken off
 	};
 	for (const Step& step : steps) {
 		move(0, GLFW_GAMEPAD_AXIS_LEFT_TRIGGER, step.glfw_value);

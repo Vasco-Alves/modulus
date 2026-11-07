@@ -256,9 +256,9 @@ namespace modulus::platform {
 			// Process OS events (keyboard, typing, mouse, window resize, joysticks plugged in or out)
 			glfwPollEvents();
 
-			// Gamepads send no events, so read them all now, once: every Input function then sees the
-			// same buttons for the whole frame. (After glfwPollEvents(), which is when GLFW hears about
-			// gamepads being plugged in or out.)
+			// Gamepad buttons and sticks send no events, so read them all now, once: every Input function
+			// then sees the same buttons for the whole frame. (After glfwPollEvents(), which is when GLFW
+			// hears about gamepads being plugged in or out.)
 			if (is_main_window)
 				update_gamepads(read_joysticks());
 

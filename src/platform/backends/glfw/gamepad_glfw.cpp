@@ -1,6 +1,6 @@
-// Gamepads. GLFW sends no events for them, so the main window's update() reads every joystick once
-// per frame (read_joysticks), and update_gamepads() turns what it read into the answers of Input's
-// gamepad functions. Only read_joysticks() and the logging of unknown joysticks call GLFW, so the
+// Gamepads. GLFW sends no events for their buttons, sticks and triggers (only for plugging them in
+// and out), so the main window's update() reads every joystick once per frame (read_joysticks), and
+// update_gamepads() turns what it read into the answers of Input's gamepad functions. Only read_joysticks() and the logging of unknown joysticks call GLFW, so the
 // tests can hand update_gamepads() made-up gamepads: nobody can plug a real one into CI.
 
 #include <modulus/platform/input.hpp>
@@ -63,7 +63,8 @@ namespace modulus::platform {
 
 	// How far a trigger is pulled, from 0 to 1. GLFW gives -1 (let go) to 1 (all the way), and exactly
 	// 0 for a trigger the gamepad doesn't have, which would read as half pulled, so exactly 0 counts as
-	// let go. (Real triggers never read exactly 0: XInput moves in steps of 1/127.5 around it.)
+	// let go. (A real trigger rarely reads exactly 0: never on Windows, where XInput moves in steps of
+	// 1/127.5 around it, and on Linux only when held exactly halfway, on some gamepads.)
 	static float trigger_amount(float glfw_value) {
 		if (glfw_value == 0.0f)
 			return 0.0f;
@@ -276,7 +277,7 @@ namespace modulus::platform {
 		if (i < 0)
 			return false;
 
-		// Gamepads send no events, so "went down" means: down this frame, but not last frame
+		// Gamepad buttons send no events, so "went down" means: down this frame, but not last frame
 		for (const Gamepad& pad : find_gamepads_in_use(gamepad)) {
 			if (pad.down[i] && !pad.was_down[i])
 				return true;
