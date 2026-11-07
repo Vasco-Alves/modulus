@@ -1,6 +1,10 @@
 #include <modulus/platform/input.hpp>
 #include "glfw_internal.hpp"
 
+#include <chrono>
+#include <functional>
+#include <thread>
+
 namespace modulus::platform {
 
 	// Helper function to convert modulus::platform::Key to GLFW key codes
@@ -181,11 +185,30 @@ namespace modulus::platform {
 		return g_typed_text;
 	}
 
-	// GLFW reports a clipboard without text (empty, or holding a picture) as an error. When pasting,
-	// that's normal (there's just nothing to paste), so while the clipboard is read only other errors
-	// are logged. (Not always: GLFW also uses this error for windows it can't create.)
-	static void log_glfw_errors_but_missing_text(int error, const char* description) {
-		if (error != GLFW_FORMAT_UNAVAILABLE)
+	// Runs a GLFW clipboard call (reading it or setting it). The clipboard is shared by every program,
+	// and on Windows another one can have it open for a moment (Windows' Clipboard History reads it
+	// right after every change). GLFW 3.3 gives up at once when that happens, so the call is tried up
+	// to 3 times, a millisecond apart, like newer GLFW versions do. GLFW's error is logged only if the
+	// last try fails too, and not at all for a clipboard without text: when pasting, that's normal
+	// (there's just nothing to paste).
+	static void try_clipboard(const std::function<void()>& call) {
+		GLFWerrorfun usual_callback = glfwSetErrorCallback(nullptr); // Meanwhile, GLFW only remembers its errors
+		int error = GLFW_NO_ERROR;
+		const char* description = nullptr;
+
+		for (int tries = 1; tries <= 3; ++tries) {
+			glfwGetError(nullptr); // Forget any earlier error
+			call();
+			error = glfwGetError(&description);
+			// GLFW reports "couldn't open the clipboard" as a platform error. (It uses that error for a
+			// few rarer clipboard failures too; trying those again does no harm.)
+			if (error != GLFW_PLATFORM_ERROR)
+				break;
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+
+		glfwSetErrorCallback(usual_callback);
+		if (error != GLFW_NO_ERROR && error != GLFW_FORMAT_UNAVAILABLE)
 			log_glfw_error(error, description);
 	}
 
@@ -193,17 +216,19 @@ namespace modulus::platform {
 		if (!g_main_window_handle) // GLFW only runs while a window is open
 			return "";
 
-		GLFWerrorfun usual_callback = glfwSetErrorCallback(log_glfw_errors_but_missing_text);
-		const char* text = glfwGetClipboardString(g_main_window_handle);
-		glfwSetErrorCallback(usual_callback);
+		const char* text = nullptr;
+		try_clipboard([&text] { text = glfwGetClipboardString(g_main_window_handle); });
 
 		// The text belongs to GLFW, and only until the next clipboard call, so return a copy
 		return text ? text : "";
 	}
 
 	void Input::set_clipboard_text(const std::string& text) {
-		if (g_main_window_handle)
-			glfwSetClipboardString(g_main_window_handle, text.c_str()); // GLFW keeps its own copy
+		if (!g_main_window_handle) // GLFW only runs while a window is open
+			return;
+
+		// GLFW keeps its own copy of the text
+		try_clipboard([&text] { glfwSetClipboardString(g_main_window_handle, text.c_str()); });
 	}
 
 } // namespace modulus::platform

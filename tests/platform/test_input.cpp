@@ -155,14 +155,25 @@ TEST_F(InputTest, CodePointsThatArentCharactersAreSkipped) {
 }
 
 TEST_F(InputTest, ClipboardHoldsText) {
-	// This is the computer's real clipboard, so the text on it is put back afterwards. (Anything
-	// else, like a picture, is lost. Under the virtual display of the CI, the clipboard starts empty.)
+	// This is the computer's real clipboard: the text on it is put back afterwards, but anything else
+	// (like a picture) is lost. On Linux the text then belongs to this test, so it's gone once the
+	// test ends, unless a clipboard manager keeps it. (Under the virtual display of the CI, the
+	// clipboard starts empty.)
 	std::string before = Input::get_clipboard_text();
 
 	Input::set_clipboard_text("Ol\xC3\xA1, clipboard"); // In UTF-8, with an a with an acute accent
 	EXPECT_EQ(Input::get_clipboard_text(), "Ol\xC3\xA1, clipboard");
 
 	Input::set_clipboard_text(before);
+}
+
+TEST_F(InputTest, ReadingTheClipboardPutsTheErrorCallbackBack) {
+	// The clipboard functions swap GLFW's error callback for a moment: the usual one must come back
+	GLFWerrorfun usual = glfwSetErrorCallback(nullptr);
+	glfwSetErrorCallback(usual);
+
+	Input::get_clipboard_text();
+	EXPECT_EQ(glfwSetErrorCallback(usual), usual);
 }
 
 TEST_F(InputTest, AClipboardWithoutTextLogsNoError) {
@@ -197,14 +208,19 @@ TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 }
 
 // GLFW only runs while a window is open. Without one, Input must not call it: GLFW would report an
-// error. (glfwGetError() works without GLFW running, and returns the last error, if any.)
+// error. (glfwGetError() works without GLFW running, and returns the last error, if any. The
+// clipboard functions read GLFW's error themselves and log it, so for them the log is checked.)
 TEST(InputWithoutAWindow, ReadsNothingAndCallsNoGlfw) {
 	glfwGetError(nullptr); // Forget any earlier error
 
 	EXPECT_FALSE(Input::is_key_repeated(Key::Space));
 	EXPECT_EQ(Input::get_typed_text(), "");
+
+	testing::internal::CaptureStderr();
 	EXPECT_EQ(Input::get_clipboard_text(), "");
 	Input::set_clipboard_text("ignored");
+	std::string errors = testing::internal::GetCapturedStderr();
+	EXPECT_EQ(errors.find("[ERROR]"), std::string::npos) << errors;
 
 	EXPECT_EQ(glfwGetError(nullptr), GLFW_NO_ERROR);
 }
