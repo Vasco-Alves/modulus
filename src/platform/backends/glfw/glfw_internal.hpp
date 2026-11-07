@@ -2,6 +2,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <string>
+
 namespace modulus::platform {
 	// A global pointer to the main window handle.
 	// Defined in platform_glfw.cpp, used in input_glfw.cpp
@@ -20,4 +22,8 @@ namespace modulus::platform {
 
 	// The same for mouse buttons (indexed by GLFW button code)
 	extern bool g_mouse_buttons_pressed[GLFW_MOUSE_BUTTON_LAST + 1];
+
+	// The text typed during the current frame, as UTF-8.
+	// Filled by the character callback, cleared at the start of every frame.
+	extern std::string g_typed_text;
 }

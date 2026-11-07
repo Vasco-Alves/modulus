@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <utility>
 
 namespace modulus::platform {
@@ -49,6 +50,13 @@ namespace modulus::platform {
 
 		static std::pair<float, float> get_mouse_position();
 		static float get_mouse_scroll(); // Returns scroll delta since last frame
+
+		// --- Typing text (e.g. a name) ---
+
+		// The text typed during this frame, as UTF-8 (like all text in Modulus): usually nothing, or one
+		// character. It follows the keyboard layout, Shift and accent keys, and a held key types again
+		// each time it repeats. Enter, Backspace, Tab and Escape aren't text: read them as keys.
+		static std::string get_typed_text();
 	};
 
 } // namespace modulus::platform

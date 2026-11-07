@@ -44,6 +44,14 @@ namespace {
 		void press_key(int glfw_key) { send_key(glfw_key, GLFW_PRESS); }
 		void repeat_key(int glfw_key) { send_key(glfw_key, GLFW_REPEAT); } // What GLFW sends while a key is held
 
+		// Types one character, given as its Unicode number (what GLFW passes on after the keyboard layout)
+		void type(unsigned int codepoint) {
+			GLFWcharfun handler = glfwSetCharCallback(handle, nullptr);
+			glfwSetCharCallback(handle, handler);
+			ASSERT_NE(handler, nullptr);
+			handler(handle, codepoint);
+		}
+
 		void click(int glfw_button) {
 			GLFWmousebuttonfun handler = glfwSetMouseButtonCallback(handle, nullptr);
 			glfwSetMouseButtonCallback(handle, handler);
@@ -117,11 +125,39 @@ TEST_F(InputTest, ScrollAddsUpWithinAFrame) {
 	EXPECT_FLOAT_EQ(Input::get_mouse_scroll(), 0.0f);
 }
 
+// (The expected text is written byte by byte, as UTF-8 stores it)
+TEST_F(InputTest, TypedTextIsUtf8) {
+	type('H');     // 1 byte
+	type(0xE9);    // e with an acute accent: 2 bytes
+	type(0x20AC);  // The euro sign: 3 bytes
+	type(0x1F600); // A smiling face: 4 bytes
+	EXPECT_EQ(Input::get_typed_text(), "H\xC3\xA9\xE2\x82\xAC\xF0\x9F\x98\x80");
+}
+
+TEST_F(InputTest, TypedTextLastsOneFrame) {
+	type('h');
+	type('i');
+	EXPECT_EQ(Input::get_typed_text(), "hi");
+	EXPECT_EQ(Input::get_typed_text(), "hi"); // Reading it doesn't use it up
+
+	window->update(); // The next frame
+	EXPECT_EQ(Input::get_typed_text(), "");
+}
+
+TEST_F(InputTest, CodePointsThatArentCharactersAreSkipped) {
+	type(0xD800);   // The first half of a UTF-16 pair
+	type(0xDFFF);   // A second half
+	type(0x110000); // Past the last character Unicode has
+	type('a');
+	EXPECT_EQ(Input::get_typed_text(), "a");
+}
+
 TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 	press_key(GLFW_KEY_SPACE);
 	repeat_key(GLFW_KEY_BACKSPACE);
 	click(GLFW_MOUSE_BUTTON_LEFT);
 	scroll(1.0);
+	type('a');
 
 	// Close the main window, then open another one, which becomes the new main window
 	window.reset();
@@ -133,4 +169,5 @@ TEST_F(InputTest, ANewMainWindowStartsWithNothingPressed) {
 	EXPECT_FALSE(Input::is_key_repeated(Key::Backspace));
 	EXPECT_FALSE(Input::is_mouse_pressed(MouseButton::Left));
 	EXPECT_EQ(Input::get_mouse_scroll(), 0.0f);
+	EXPECT_EQ(Input::get_typed_text(), "");
 }

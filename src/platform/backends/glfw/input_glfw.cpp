@@ -173,4 +173,12 @@ namespace modulus::platform {
 		return g_scroll_delta_y;
 	}
 
+	std::string Input::get_typed_text() {
+		if (!g_main_window_handle)
+			return "";
+
+		// Filled by the character callback in platform_glfw.cpp. A copy: ours is cleared next frame.
+		return g_typed_text;
+	}
+
 } // namespace modulus::platform
