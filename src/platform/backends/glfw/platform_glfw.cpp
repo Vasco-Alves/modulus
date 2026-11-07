@@ -14,8 +14,8 @@ namespace modulus::platform {
 	// =========================================================================
 
 	// This function catches errors from inside GLFW (e.g. invalid monitor)
-	// and pipes them into our own Logging system.
-	static void glfw_error_callback(int error, const char* description) {
+	// and pipes them into our own Logging system. (Not static: input_glfw.cpp uses it too.)
+	void log_glfw_error(int error, const char* description) {
 		MOD_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
@@ -24,14 +24,53 @@ namespace modulus::platform {
 	}
 
 	static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) {
-		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT instead,
-		// so this only records real presses. (Unknown keys are -1, so we skip those.)
-		if (action == GLFW_PRESS && key >= 0)
+		// Unknown keys are -1, so we skip those
+		if (key < 0)
+			return;
+
+		// GLFW_PRESS is sent once when a key goes down. Holding it sends GLFW_REPEAT again and again
+		// (after a short wait, as fast as the keyboard settings say): those count as repeated, not pressed.
+		if (action == GLFW_PRESS)
 			g_keys_pressed[key] = true;
+		if (action == GLFW_PRESS || action == GLFW_REPEAT)
+			g_keys_repeated[key] = true;
+	}
+
+	// Adds one character to UTF-8 text. UTF-8 stores a character in 1 to 4 bytes: up to U+007F (plain
+	// ASCII) in 1 byte as it is, bigger ones split into pieces of 6 bits, after a first byte that says
+	// how many bytes there are. Every byte but the first looks like 10xxxxxx.
+	static void append_utf8(std::string& text, char32_t c) {
+		if (c < 0x80) {
+			text += char(c);
+		} else if (c < 0x800) {
+			text += char(0xC0 | (c >> 6));
+			text += char(0x80 | (c & 0x3F));
+		} else if (c < 0x10000) {
+			text += char(0xE0 | (c >> 12));
+			text += char(0x80 | ((c >> 6) & 0x3F));
+			text += char(0x80 | (c & 0x3F));
+		} else {
+			text += char(0xF0 | (c >> 18));
+			text += char(0x80 | ((c >> 12) & 0x3F));
+			text += char(0x80 | ((c >> 6) & 0x3F));
+			text += char(0x80 | (c & 0x3F));
+		}
+	}
+
+	// GLFW calls this for each character typed, as its Unicode number (its "code point"), after the
+	// keyboard layout, Shift and accent keys. It already left out what isn't text: Enter, Backspace,
+	// Escape and the other control characters, and shortcuts like Ctrl+V.
+	static void char_callback(GLFWwindow* /*window*/, unsigned int codepoint) {
+		// Numbers that aren't characters (half of a UTF-16 pair, or past the last character) are
+		// skipped, so the text is always valid UTF-8
+		if ((codepoint >= 0xD800 && codepoint <= 0xDFFF) || codepoint > 0x10FFFF)
+			return;
+
+		append_utf8(g_typed_text, char32_t(codepoint));
 	}
 
 	static void mouse_button_callback(GLFWwindow* /*window*/, int button, int action, int /*mods*/) {
-		// Like key_callback: only record the moment a button goes down
+		// Like g_keys_pressed in key_callback: only record the moment a button goes down (mouse buttons don't repeat)
 		if (action == GLFW_PRESS && button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST)
 			g_mouse_buttons_pressed[button] = true;
 	}
@@ -42,7 +81,25 @@ namespace modulus::platform {
 
 	bool g_keys_pressed[GLFW_KEY_LAST + 1] = {};
 
+	bool g_keys_repeated[GLFW_KEY_LAST + 1] = {};
+
 	bool g_mouse_buttons_pressed[GLFW_MOUSE_BUTTON_LAST + 1] = {};
+
+	std::string g_typed_text;
+
+	// Forgets the main window's input from the last frame: scroll, key presses and repeats, clicks
+	// and typing. Done when a frame starts, and when the main window closes (so the next main window
+	// starts with nothing pressed, even before its first update()).
+	static void clear_frame_input() {
+		g_scroll_delta_y = 0.0f;
+		for (bool& pressed : g_keys_pressed)
+			pressed = false;
+		for (bool& repeated : g_keys_repeated)
+			repeated = false;
+		for (bool& pressed : g_mouse_buttons_pressed)
+			pressed = false;
+		g_typed_text.clear();
+	}
 
 	// How many windows are open right now.
 	// GLFW starts when the first window opens and stops when the last one closes,
@@ -51,7 +108,7 @@ namespace modulus::platform {
 
 	static bool start_glfw() {
 		// Redirect GLFW errors to modulus logger
-		glfwSetErrorCallback(glfw_error_callback);
+		glfwSetErrorCallback(log_glfw_error);
 
 		if (!glfwInit()) {
 			MOD_FATAL("Failed to initialize GLFW!");
@@ -123,6 +180,7 @@ namespace modulus::platform {
 				g_main_window_handle = m_handle;
 				glfwSetScrollCallback(m_handle, scroll_callback);
 				glfwSetKeyCallback(m_handle, key_callback);
+				glfwSetCharCallback(m_handle, char_callback);
 				glfwSetMouseButtonCallback(m_handle, mouse_button_callback);
 			}
 
@@ -146,8 +204,10 @@ namespace modulus::platform {
 			if (!m_handle)
 				return;
 
+			// Input reads nothing without a main window, and the next one starts afresh
 			if (g_main_window_handle == m_handle) {
 				g_main_window_handle = nullptr;
+				clear_frame_input();
 			}
 
 			glfwDestroyWindow(m_handle);
@@ -169,16 +229,11 @@ namespace modulus::platform {
 				m_frame_time = std::chrono::duration<float>(now - *m_last_update).count();
 			m_last_update = now;
 
-			// A new frame starts: forget the main window's scroll, key presses and clicks from last frame
-			if (m_handle == g_main_window_handle) {
-				g_scroll_delta_y = 0.0f;
-				for (bool& pressed : g_keys_pressed)
-					pressed = false;
-				for (bool& pressed : g_mouse_buttons_pressed)
-					pressed = false;
-			}
+			// A new frame starts: forget the main window's scroll, key presses and repeats, clicks and typing from last frame
+			if (m_handle == g_main_window_handle)
+				clear_frame_input();
 
-			glfwPollEvents();		// Process OS events (keyboard, mouse, window resize)
+			glfwPollEvents();		// Process OS events (keyboard, typing, mouse, window resize)
 
 			return !glfwWindowShouldClose(m_handle);
 		}
